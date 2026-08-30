@@ -1,0 +1,54 @@
+# ─── Ý tưởng nháp — không push lên GitHub ────────────────────────────────
+idead/
+source_of_inspiration/
+
+# ─── Môi trường Bob IDE & runtime ────────────────────────────────────────
+.bob/
+.bobide-server/
+
+# ─── Hệ thống & cache ────────────────────────────────────────────────────
+.cache/
+.config/
+.gnupg/
+.local/
+
+# ─── SSH keys & credentials ───────────────────────────────────────────────
+.ssh/
+*.pem
+*.key
+*.p12
+*.pfx
+C:Users*
+
+# ─── Shell history & sensitive env ───────────────────────────────────────
+.bash_history
+.bashrc
+.profile
+.wget-hsts
+.motd_shown
+
+# ─── Secrets & env files ──────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+*.secret
+
+# ─── OS & editor ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ─── Node / build artifacts ───────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.turbo/
+*.log
+
+# ─── Test & temp ──────────────────────────────────────────────────────────
+test.txt
+*.tmp
+*.bak
+pland/
