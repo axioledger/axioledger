@@ -331,3 +331,168 @@ Truy xuất dữ liệu blacklist từ Supply Chain Scanner (npm/DApp/contract a
 > **File:** `core/api/api-schema-v0.0.0.md`
 > **Đồng bộ với:** `docs/Whitepaper AXIOLEDGER ($AXQ).md` §11.5
 > **Maintainer:** Axioledger Core Maintainer <315885655+davictran76@users.noreply.github.com>
+
+---
+
+## ADDENDUM — KPX Router Endpoints (v0.0.0-kpx)
+
+> Thêm vào tại Genesis Block `2026-08-31T09:41:34Z`  
+> Ref: Whitepaper §11.11 · `core/contracts/IKPXRouter.sol`
+
+### `GET /kpx/router/quote`
+
+Tính toán output swap trước khi thực thi (read-only).
+
+**Query params:** `tokenIn`, `tokenOut`, `amountIn`
+
+**Response `200`:**
+```json
+{
+  "token_in":        "0x...",
+  "token_out":       "0x...",
+  "amount_in":       "1000000000000000000",
+  "amount_out":      "998234567890123456",
+  "price_impact_bps": 12,
+  "route_path":      ["0xPoolA", "0xPoolB"],
+  "valid_until_block": 1234590
+}
+```
+
+---
+
+### `POST /kpx/router/swap`
+
+Thực thi AMM swap với ZK-Proof bắt buộc.
+
+**Request Body:**
+```json
+{
+  "token_in":       "0x...",
+  "token_out":      "0x...",
+  "amount_in":      "1000000000000000000",
+  "min_amount_out": "990000000000000000",
+  "deadline_block": 1234600,
+  "zk_proof":       "0x...",
+  "zk_pub_inputs":  ["0x1234...", "0x5678..."]
+}
+```
+
+**Response `200`:**
+```json
+{
+  "tx_hash":         "0x...",
+  "amount_out":      "997123456789000000",
+  "actual_slip_bps": 8,
+  "zk_proof_hash":   "0x...",
+  "block_height":    1234589
+}
+```
+
+**Error `403`** (VRQ Scanner flag):
+```json
+{ "error": "VRQ_FLAGGED", "reason": "Caller address flagged by Supply Chain Scanner" }
+```
+
+---
+
+### `POST /kpx/bridge/out`
+
+Khởi tạo bridge tài sản sang chain khác.
+
+**Request Body:**
+```json
+{
+  "token":           "0x...",
+  "amount":          "5000000000000000000",
+  "target_chain_id": 42161,
+  "recipient":       "0x000000000000000000000000RecipientAddressHere",
+  "deadline_block":  1234700,
+  "zk_proof":        "0x...",
+  "zk_pub_inputs":   ["0x..."]
+}
+```
+
+**Response `201`:**
+```json
+{
+  "bridge_id":   "0xabc...def",
+  "status":      "PENDING",
+  "estimated_completion_blocks": 24,
+  "mpc_relayers_required": 2
+}
+```
+
+---
+
+### `GET /kpx/bridge/status`
+
+Truy vấn trạng thái bridge operation.
+
+**Query param:** `bridge_id`
+
+**Response `200`:**
+```json
+{
+  "bridge_id":   "0xabc...def",
+  "status":      "IN_FLIGHT",
+  "source_chain": 31337,
+  "target_chain": 42161,
+  "signatures_collected": 2,
+  "signatures_required":  2,
+  "updated_at":  "2026-09-01T10:00:00Z"
+}
+```
+
+---
+
+### `POST /kpx/rwa/deposit`
+
+Gửi RWA vào Treasury (chỉ institutional tier).
+
+**Request Body:**
+```json
+{
+  "asset_id":       "0xRWA_BOND_VNGOV_2026_001",
+  "rwa_amount":     "1000000000000000000000",
+  "axq_collateral": "150000000000000000000",
+  "zk_proof":       "0x...",
+  "zk_pub_inputs":  ["0x..."]
+}
+```
+
+**Response `201`:**
+```json
+{
+  "rwa_tokens_minted": "1000000000000000000000",
+  "axq_locked":        "150000000000000000000",
+  "collateral_ratio":  "15.00%",
+  "asset_id":          "0xRWA_BOND_VNGOV_2026_001",
+  "tx_hash":           "0x..."
+}
+```
+
+---
+
+### `POST /kpx/darkpool/order`
+
+Đặt lệnh ẩn vào Dark Pool (institutional tier).
+
+**Request Body:**
+```json
+{
+  "commitment":    "0xPedersenCommitment...",
+  "expiry_blocks": 100,
+  "zk_proof":      "0x...",
+  "zk_pub_inputs": ["0x..."]
+}
+```
+
+**Response `201`:**
+```json
+{
+  "order_id":     "0xOrderId...",
+  "commitment":   "0xPedersenCommitment...",
+  "expiry_block": 1234689,
+  "status":       "PENDING_MATCH"
+}
+```

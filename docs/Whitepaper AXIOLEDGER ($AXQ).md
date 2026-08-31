@@ -932,3 +932,122 @@ namehash("alice.axq") =
 
 ---
 
+
+## 11.10. GENESIS BLOCK — Sổ Cái Khởi Tạo
+
+### Thời Điểm Đúc Token Duy Nhất (One-Time Mint)
+
+**Block 0** của Sổ cái Lõi AXIOLEDGER Hub (`$AXQ`) được thiết lập tại thời khắc chính xác:
+
+```
+Genesis Timestamp : 2026-08-31T09:41:34Z (UTC)
+Human Readable    : Monday, August 31, 2026 — 09:41:34 UTC
+Unix Epoch        : 1788169294
+Network           : axioledger-mainnet-genesis
+Genesis File      : core/genesis/genesis-block.json
+```
+
+> Đây là khoảnh khắc **10.000 tỷ token $AXQ được đúc duy nhất một lần** và phân bổ vĩnh viễn vào 5 Hợp đồng Thông minh Gốc. Không có cơ chế remint. Không có admin key. Mọi thay đổi tham số chỉ qua TreasuryDAO governance vote.
+
+### 5 Hợp Đồng Thông Minh Gốc (Genesis Smart Contracts)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  GENESIS BLOCK — 10.000 TỶEN $AXQ — PHÂN BỔ VĨNH VIỄN             │
+├──────────────────────────┬──────┬──────────────────────────────────┤
+│  Contract                │  %   │  Cơ chế Khóa                     │
+├──────────────────────────┼──────┼──────────────────────────────────┤
+│  RWAReserveVault.sol     │  30% │  Smart contract controlled       │
+│  ValidatorRewardPool.sol │  25% │  50-year logarithmic decay       │
+│  TreasuryDAO.sol         │  20% │  On-chain governance only        │
+│  CommunityVault.sol      │  15% │  Vesting schedule                │
+│  TeamVestingVault.sol    │  10% │  5-year cliff vesting            │
+└──────────────────────────┴──────┴──────────────────────────────────┘
+
+Emission equation mã hóa trong Genesis Block:
+  Emission(t) = κ · ln(1 + ΔTVL_RWA) + μ · TxVolume(t) − Burn(t)
+  Nếu ΔTVL_RWA = 0 → Emission = 0 (lạm phát tự dừng)
+```
+
+### Tham Số Mạng Lưới Bất Biến
+
+| Tham số | Giá trị | Mô tả |
+|---|---|---|
+| `max_supply` | `10,000,000,000,000` | Hard cap tuyệt đối — không thay đổi được |
+| `admin_key` | `null` | Không tồn tại |
+| `consensus` | `ZK-OBFT` | VP_i = S_i × R_i |
+| `micro_epoch` | `400ms` | Block time target |
+| `finality_target` | `< 3 phút` | ZK-Rollup Settlement |
+| `max_tx_fee` | `< $0.001 USD` | Điều VII — Bất Khả Xâm Phạm |
+| `nakamoto_min` | `> 100` | Điều III — Bất Khả Xâm Phạm |
+| `tps_target` | `600,000+` | AF_XDP + SVM Rollup |
+| `zk_proof_size` | `~284 bytes` | π — Groth16 aggregated |
+| `post_quantum` | `CRYSTALS-Dilithium` | NIST FIPS 205 — parallel track |
+
+---
+
+## 11.11. KINETOPROTOCOL CROSS-CHAIN BRIDGE — Kiến Trúc & Kiểm Duyệt
+
+### Tổng Quan Kiến Trúc Cầu Nối
+
+Cầu nối Cross-chain của KINETOPROTOCOL ($KPX) được kích hoạt tại **Giai đoạn 3 (v1.0.0 — Năm 3)**, sau khi VPX Consensus và SQX 600K TPS đã ổn định ≥ 60 ngày.
+
+```
+[Nguồn: ETH / ARB / SOL]
+        │
+        │ bridgeOut() + ZK-Proof + VRQ scan
+        ▼
+[KPX Router Gateway — IKPXRouter.sol]
+        │
+        ├── [1] VRQ Scanner: isFlagged(caller, token) ← BLOCK nếu độc hại
+        ├── [2] ZK-Proof verify (IZKVerifier — VRQ circuit)
+        ├── [3] Amount check: amount <= maxBridgeAmountPerTx
+        ├── [4] Chain whitelist: ETH(60) · ARB(42161) · SOL(501)
+        │
+        ▼
+[MPC Relayer Network — 2/3 threshold signatures]
+        │
+        ├── Relayer 1 (GL-CORE-FIN-NODE01) ── sign
+        ├── Relayer 2 (GL-CORE-FIN-NODE02) ── sign   → 2/3 threshold
+        └── Relayer 3 (GL-CORE-FIN-NODE03) ── sign
+        │
+        ▼
+[bridgeIn() trên chain đích]
+        │
+        ├── [5] Replay check: bridgeId.fulfilled == false
+        ├── [6] MPC signature verify (≥ 2/3)
+        ├── [7] VRQ scan: recipient không bị flag
+        │
+        ▼
+[Recipient nhận tài sản — Finality confirmed]
+```
+
+### 4 Chức Năng Cốt Lõi IKPXRouter
+
+| Section | Chức năng | Hàm chính | Security Gate |
+|---|---|---|---|
+| **AMM Swap** | Định tuyến chống trượt giá | `swap()`, `quoteSwap()` | VRQ + ZK-Proof + TWAP oracle |
+| **Cross-chain Bridge** | Kết nối ETH/ARB/SOL | `bridgeOut()`, `bridgeIn()` | MPC 2/3 + VRQ + Replay prevention |
+| **RWA Treasury** | Token hóa tài sản thực | `depositRWA()`, `harvestAndBuyback()` | Institutional KYC + 15% AXQ collateral |
+| **Dark Pool** | Block trades ẩn danh | `placeDarkPoolOrder()`, `fillDarkPoolOrder()` | Pedersen commitment + ZK Match Proof |
+
+### Cổng Kiểm Duyệt Bảo Mật (Deploy Gate)
+
+Trước khi cấp quyền triển khai `IKPXRouter.sol` lên Mainnet, **30 security checks** trong 6 nhóm (A–F) phải đạt 100%:
+
+```
+A. AMM Swap (8 checks)     — Reentrancy, slippage, TWAP, ZK freshness
+B. Bridge (8 checks)       — Replay, MPC threshold, drain protection
+C. RWA Treasury (7 checks) — Oracle, collateral ratio, yield rounding
+D. Dark Pool (7 checks)    — Commitment uniqueness, Pedersen binding
+E. Governance (6 checks)   — No admin key, emergency pause auth
+F. Integration (4 checks)  — ZK circuit version, VRQ realtime, malleability
+```
+
+**Tài liệu đầy đủ:** [`core/contracts/KPXRouter-security-review.md`](../core/contracts/KPXRouter-security-review.md)  
+**Interface spec:** [`core/contracts/IKPXRouter.sol`](../core/contracts/IKPXRouter.sol)
+
+> **⚠️ Quy tắc bất khả nhượng:** `IKPXRouter.sol` **KHÔNG được deploy** cho đến khi tất cả 30 checks PASSED, external audit clean 100%, và TreasuryDAO governance vote thông qua với timelock 48h.
+
+---
+
