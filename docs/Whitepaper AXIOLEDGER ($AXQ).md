@@ -242,7 +242,64 @@ AXIOLEDGER áp dụng quy chuẩn tuân thủ tài chính tối cao (PCI DSS Lev
 | **Smart Contract / Treasury Engine** | Chạy các service tự động dưới user đặc quyền bị giới hạn, tương tác qua RPC/IPC. | Ký giao dịch tự động thông qua HSM/Multisig, luân chuyển dòng tiền. |
 | **Security & FIM Auditor** | Quyền đọc file log hệ thống, log giao dịch, chạy công cụ quét bảo mật. | Giám sát tính toàn vẹn tệp tin (FIM), phát hiện xâm nhập/thay đổi mã nguồn trên `Q:\`. |
 
-### 7.2. Thiết Lập Phân Vùng Ảo `Q:\` Và Ánh Xạ Máy Chủ Linux/WSL
+### 7.2. Định Danh Máy Chủ & Cấu Hình Mạng Thực Tế (Node Identity)
+
+Node DevNet đang hoạt động được định danh chính thức trong hệ sinh thái AXIOLEDGER như sau:
+
+| Thuộc tính | Giá trị |
+| :---- | :---- |
+| **Hostname** | `axioledger-devnode` |
+| **FQDN (Axioledger Name System)** | `axioledger-devnode.axq` |
+| **Hệ điều hành** | Ubuntu 24.04.4 LTS (Noble Numbat) |
+| **Kernel** | Linux 4.4.0-19041-Microsoft (WSL2/Hyper-V) |
+| **Windows Host** | `DESKTOP-SKOVGOT` |
+
+#### Bản đồ Giao diện Mạng (Network Interface Map)
+
+| Interface | Địa chỉ IP | Subnet | Vai trò |
+| :---- | :---- | :---- | :---- |
+| `wifi0` | **`192.168.0.47`** | `192.168.0.0/24` | **Primary LAN** — WiFi, Default Gateway `192.168.0.1`. Toàn bộ traffic dịch vụ AXIO đều bind vào interface này |
+| `eth1` | `172.29.208.1` | `172.29.208.0/20` | Hyper-V vSwitch Internal — WSL ↔ Windows Host bridge |
+| `eth0` | `169.254.82.205` | `169.254.0.0/16` | Link-local, Windows ICS (`192.168.137.1/24`) |
+| `lo` | `127.0.0.1` | `127.0.0.0/8` | Loopback |
+
+#### Axioledger Name System (ANS) — `.axq` DNS Nội bộ
+
+Toàn bộ subdomain hệ sinh thái đều trỏ về `192.168.0.47` (cấu hình tại `/etc/hosts`, bảo vệ bởi `wsl.conf → generateHosts=false`):
+
+```
+# ── ANS: .axq — Axioledger Core Hub ─────────────────────────────
+192.168.0.47    axioledger.axq          # Portal chính
+192.168.0.47    api.axioledger.axq      # REST API Gateway
+192.168.0.47    rpc.axioledger.axq      # JSON-RPC Endpoint
+192.168.0.47    ws.axioledger.axq       # WebSocket Streaming
+192.168.0.47    explorer.axioledger.axq # Block Explorer
+192.168.0.47    grafana.axioledger.axq  # Monitoring Dashboard
+192.168.0.47    devnet.axioledger.axq   # DevNet entry point
+192.168.0.47    testnet.axioledger.axq  # Testnet entry point
+
+# ── ANS: .vpx — Valiprecision Consensus ──────────────────────────
+192.168.0.47    rpc.valiprecision.vpx
+192.168.0.47    validator.valiprecision.vpx
+192.168.0.47    staking.valiprecision.vpx
+
+# ── ANS: .sqx — Sequentichain L2 ─────────────────────────────────
+192.168.0.47    rpc.sequentichain.sqx
+192.168.0.47    sequencer.sequentichain.sqx
+192.168.0.47    rollup.sequentichain.sqx
+
+# ── ANS: .kpx — Kinetoprotocol DeFi ──────────────────────────────
+192.168.0.47    amm.kinetoprotocol.kpx
+192.168.0.47    bridge.kinetoprotocol.kpx
+192.168.0.47    vault.kinetoprotocol.kpx
+
+# ── ANS: .vrq — Veraciphers ZK Security ──────────────────────────
+192.168.0.47    zkproof.veraciphers.vrq
+192.168.0.47    did.veraciphers.vrq
+192.168.0.47    audit.veraciphers.vrq
+```
+
+### 7.3. Thiết Lập Phân Vùng Ảo `Q:\` Và Ánh Xạ Máy Chủ Linux/WSL
 
 Để cô lập hoàn toàn hạ tầng tài chính tự động hóa khỏi các tác vụ hệ điều hành thông thường, AXIOLEDGER sử dụng kiến trúc **Sandboxed Virtual Drive**.
 
@@ -271,7 +328,7 @@ Cấu trúc thư mục được đồng bộ song song như sau để phục v�
   * *Server Path:* `/mnt/q/root/Ubuntu-24.04/rootfs/root/logs/`
   * *Chức năng:* `nginx-access.log`, `core-out.log` phục vụ kiểm toán tự động.
 
-### 7.3. Cấu Trúc Quản Trị Hệ Thống Liên Hợp (Hybrid-Fi)
+### 7.4. Cấu Trúc Quản Trị Hệ Thống Liên Hợp (Hybrid-Fi)
 
 Quy ước đặt tên chuẩn toàn cầu: `[Khu vực]-[Cấp độ tổ chức]-[Phân hệ]-[Mã định danh duy nhất]`. Hệ thống máy chủ vật lý (bao gồm các mount point `/mnt/q/..`) được kiểm soát chéo bởi 3 trụ cột:
 
@@ -282,7 +339,6 @@ Quy ước đặt tên chuẩn toàn cầu: `[Khu vực]-[Cấp độ tổ chứ
 * **Trụ cột DevOps & Vận hành Hạ tầng (VD: `SG-DEVOPS-NODE-Q01`):** Điều hành trực tiếp các tiến trình Systemd Service và Nginx, đảm bảo cấu hình proxy chuyển tiếp an toàn từ cổng 443 vào API lõi Node.js tại phân vùng `Q:\`, duy trì High Availability (99.99%).
 
 ---
-
 ## 8. HỆ THỐNG VÍ AXIO VAULT: GIAO DIỆN NGƯỜI DÙNG CUỐI
 
 **Khẩu hiệu:** *"Trải nghiệm Web2 – Sức mạnh Web3 – Bảo mật Toán học"*
@@ -472,6 +528,102 @@ KPX (deposit_rwa_and_lock_axq)
 |---|---|
 | Điều lệ Chính thức v2.0 | [`docs/AXIOLEDGER-OFFICIAL-CHARTER.md`](./AXIOLEDGER-OFFICIAL-CHARTER.md) |
 | Design System Overview | [`design-system/README.md`](../design-system/README.md) |
+
+### 11.5. Khung Kiến Trúc API Hệ Sinh Thái (v0.0.0)
+
+API Gateway duy nhất tiếp nhận toàn bộ traffic, thực thi xác thực ZK-DID, rate limiting và TLS 1.3 trước khi định tuyến đến từng Pillar:
+
+```
+Client / DApp
+    │  HTTPS TLS 1.3
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│           API GATEWAY                                   │
+│  https://api.axioledger.axq/v1/  (192.168.0.47:443)    │
+│  • ZK-DID Authentication         • Rate Limiting        │
+│  • TLS 1.3 Termination           • Request Routing      │
+└──────┬──────────┬──────────┬──────────┬──────────┬──────┘
+       │          │          │          │          │
+       ▼          ▼          ▼          ▼          ▼
+  /core/      /vp/       /sqx/      /kpx/      /vrq/
+  AXQ Hub    VPX        SQX        KPX         VRQ
+```
+
+**Phân hạch Endpoint theo Tổ chức:**
+
+| Tổ chức | Prefix | Endpoint | Mô tả |
+| :---- | :---- | :---- | :---- |
+| **Hub ($AXQ)** | `/core/` | `POST /core/treasury/propose` | Đề xuất quản trị DAO |
+| | | `GET /core/metrics/inflation` | Truy xuất thông số phát thải |
+| **VALIPRECISION ($VPX)** | `/vp/` | `GET /vp/validators/reputation` | Truy xuất chỉ số $R_i$ |
+| | | `POST /vp/consensus/zk-proof` | Gửi bằng chứng ZK-SNARKs đa chữ ký |
+| **SEQUENTICHAIN ($SQX)** | `/sqx/` | `POST /sqx/tx/batch` | Gửi cụm giao dịch qua Zero-Copy Network |
+| | | `GET /sqx/rollup/state` | Truy xuất trạng thái L2 Rollup |
+| **KINETOPROTOCOL ($KPX)** | `/kpx/` | `POST /kpx/pool/swap` | Thực thi hoán đổi cross-chain |
+| | | `GET /kpx/rwa/vault` | Truy xuất tài sản thế giới thực |
+| **VERACIPHERS ($VRQ)** | `/vrq/` | `POST /vrq/did/verify` | Xác thực KYC ẩn danh ZK-DID |
+| | | `GET /vrq/scanner/blacklist` | Truy xuất dữ liệu quét mã nguồn |
+
+Schema chi tiết: [`core/api/api-schema-v0.0.0.md`](../core/api/api-schema-v0.0.0.md)
+
+### 11.6. Trung Tâm Điều Khiển CI/CD — OMNI GitHub Automation Controller (v0.0.0)
+
+Máy chủ `axioledger-devnode` (`192.168.0.47`) vận hành bộ script tự động hóa tại `core/github/` để điều phối toàn bộ 5 tổ chức GitHub:
+
+```
+================================================================================
+          AXIOLEDGER — OMNI GITHUB AUTOMATION CONTROLLER  v0.0.0
+================================================================================
+ Service Account : 315885655+davictran76@users.noreply.github.com
+ Node            : axioledger-devnode (192.168.0.47)
+ Token Status    : [🟢 ACTIVE] — Super Admin (Full Scope)
+ Organizations   : axioledger · kinetoprotocol · sequentichain
+                   valiprecision · veraciphers
+--------------------------------------------------------------------------------
+ WORKFLOWS:
+  [1] Tạo Repository đồng nhất xuyên 5 tổ chức
+  [2] Đồng bộ bản vá bảo mật (VRQ → Cross-Org Patch)
+  [3] Áp dụng Branch Protection hàng loạt (dev/ledger/master/main)
+  [4] Luân chuyển Secrets & API Keys (24h Auto-Rotation)
+  [5] Tạo / Cập nhật GitHub Projects v2 (Kanban Board)
+  [6] Kích hoạt GitHub Actions Workflow xuyên tổ chức
+  [7] Kiểm toán toàn diện — Audit Snapshot → JSON
+================================================================================
+```
+
+**Quyền hạn (GitHub Token Scopes) được phân bổ theo nhiệm vụ:**
+
+| Nhóm Quyền | Scope | Workflow Sử dụng |
+| :---- | :---- | :---- |
+| **Tổ chức & Dự án** | `admin:org`, `project` | W1, W5 — Tạo repo, quản lý Kanban |
+| | `write:org`, `admin:org_hook` | W5 — Cập nhật thành viên, webhooks |
+| **Mã nguồn & CI/CD** | `repo`, `workflow` | W1, W2, W6 — Push code, trigger Actions |
+| | `manage_runners:org` | W6 — Điều phối self-hosted runner tại `Q:\` |
+| **Bảo mật & Bí mật** | `admin:public_key`, `admin:gpg_key` | W4 — Luân chuyển khóa mã hóa mỗi 24h |
+| | `codespace:secrets`, `write:packages` | W4, W2 — Rotate secrets, publish packages |
+| | `audit_log`, `security_events` | W7 — Kiểm toán toàn diện → JSON report |
+
+**Luồng Backend Tự Động Hóa:**
+
+```
+[1] Cross-Org Security Sync (W2)
+    veraciphers/scanner  ──patch──►  sequentichain/core
+                         ──patch──►  kinetoprotocol/core
+                         ──patch──►  axioledger/core
+                         ──patch──►  valiprecision/core
+                         └─ Trigger CI/CD rebuild (W6) ─► Tất cả orgs
+
+[2] Secret Rotation (W4) — Mỗi 24h (cron)
+    HSM Key Generation ──encrypt(NaCl)──► PUT /orgs/{org}/actions/secrets
+                                          × 5 tổ chức đồng thời
+
+[3] Audit Snapshot (W7) — Định kỳ
+    GitHub API → repos + members + secrets + hooks
+    → /root/logs/audit-{timestamp}.json
+    → FIM giám sát tính toàn vẹn báo cáo
+```
+
+Script điều khiển: [`core/github/modal.sh`](../core/github/modal.sh)
 | Color Tokens (JSON + CSS) | [`design-system/tokens/`](../design-system/tokens/) |
 | Button Component Spec | [`design-system/components/buttons.md`](../design-system/components/buttons.md) |
 | Modal & Bottom Sheet | [`design-system/components/modals.md`](../design-system/components/modals.md) |
@@ -481,6 +633,202 @@ KPX (deposit_rwa_and_lock_axq)
 | Icon System — Linear (920 SVG) | [`asset/icon/linear/`](../asset/icon/linear/) |
 | Icon System — Bold (980 SVG) | [`asset/icon/bold/`](../asset/icon/bold/) |
 | UI Kit Audit Report | [`audit/audit-ui-kit.md`](../audit/audit-ui-kit.md) |
+
+---
+
+### 11.7. Bản Đồ Liên Kết Định Danh Toàn Hệ Thống
+
+Bảng quy chiếu sau chuẩn hóa các tiêu chuẩn kỹ thuật, không gian tên miền, phạm vi NPM và tổ chức GitHub cho 5 trụ cột cấu thành hệ sinh thái AXIOLEDGER:
+
+| Trụ cột | Ticker | Lớp Kiến trúc | ANS TLD | NPM Scope | GitHub Org | Repo Mẫu |
+| :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+| **Axioledger** | `$AXQ` | Core Settlement / DAO | `.axq` | `@axioledger/*` | `@axioledger` | `axq-core-contracts`, `axq-ans-sdk` |
+| **Valiprecision** | `$VPX` | Consensus & Node Staking | `.vpx` | `@valiprecision/*` | `@valiprecision` | `vpx-node-client`, `vpx-pos-engine` |
+| **Sequentichain** | `$SQX` | L2 Sequencing / Rollup | `.sqx` | `@sequentichain/*` | `@sequentichain` | `sqx-rollup-core`, `sqx-sequencer` |
+| **Kinetoprotocol** | `$KPX` | DeFi Engine & Liquidity | `.kpx` | `@kinetoprotocol/*` | `@kinetoprotocol` | `kpx-amm-router`, `kpx-liquidity-pool` |
+| **Veraciphers** | `$VRQ` | ZK-Proof & Privacy DID | `.vrq` | `@veraciphers/*` | `@veraciphers` | `vrq-zk-circuits`, `vrq-did-resolver` |
+
+**ANS Domains đang hoạt động:**
+
+| Domain | Pillar | IP | HTTPS | TLS Issuer |
+| :---- | :---- | :---- | :---- | :---- |
+| `axqprotocol.axq` | Hub $AXQ | `192.168.0.47` | ✅ 200 | AXIOLEDGER CROSS-BRIDGE CA |
+| `axqchain.axq` | Hub $AXQ | `192.168.0.47` | ✅ 200 | AXIOLEDGER CROSS-BRIDGE CA |
+| `vpxchain.vpx` | $VPX | `192.168.0.47` | ✅ 200 | AXIOLEDGER CROSS-BRIDGE CA |
+| `sqxledger.sqx` | $SQX | `192.168.0.47` | ✅ 200 | AXIOLEDGER CROSS-BRIDGE CA |
+| `kpxprotocol.kpx` | $KPX | `192.168.0.47` | ✅ 200 | AXIOLEDGER CROSS-BRIDGE CA |
+| `vrqledger.vrq` | $VRQ | `192.168.0.47` | ✅ 200 | AXIOLEDGER CROSS-BRIDGE CA |
+
+Node vận hành: `axioledger-devnode` · `192.168.0.47` (LAN) · `113.22.172.197` (WAN)
+
+---
+
+### 11.8. Hệ Thống Chứng Chỉ PKI — AXIOLEDGER Global Payment Authority (GPIA)
+
+AXIOLEDGER vận hành hạ tầng PKI 4 tầng độc lập phục vụ toàn bộ giao tiếp mã hóa nội bộ, xác thực mTLS giữa các Pillar và cấp phát chứng chỉ TLS cho tất cả ANS domains.
+
+#### Kiến trúc phân cấp chứng chỉ (Certificate Hierarchy)
+
+```
+AXIOLEDGER GLOBAL PAYMENT ROOT CA          (RSA-4096 / SHA-512 / 20 năm)
+  Serial: 02283C30000797C17F4E6FCCCF6B0B6F57298922
+  FP:     81:71:DE:A4:CE:28:12:24:71:41:3C:BC:BF:4F:A0:16:...
+  └── AXIOLEDGER CROSS-BRIDGE CA           (RSA-4096 / SHA-384 / 10 năm / pathlen:1)
+      FP:  E4:61:7D:31:13:93:9F:A6:C9:DE:23:7B:68:13:40:C1:...
+      ├── AXQ Hub Settlement Authority     (Pillar CA / 5yr / pathlen:0)
+      │   └── axioledger-devnode.axq       (Operator / 2yr / clientAuth+serverAuth)
+      ├── VPX Consensus Authority          (Pillar CA / 5yr)
+      ├── SQX L2 Execution Authority       (Pillar CA / 5yr)
+      ├── KPX DeFi Liquidity Authority     (Pillar CA / 5yr)
+      ├── VRQ ZK Privacy Authority         (Pillar CA / 5yr)
+      └── AXIOLEDGER PAYMENT GATEWAY       (End-Entity / mTLS / 16 SANs / 1yr)
+          Serial: 1DF091B8FF6050378FB3FC9D69219AD05B7F07A9
+```
+
+#### 9.1. Root CA — Axioledger Global Payment Authority
+
+```bash
+# Khởi tạo Root CA (RSA 4096-bit, SHA-512, 20 năm)
+openssl genrsa -out gpia-root.key 4096
+
+openssl req -x509 -new -nodes -key gpia-root.key -sha512 -days 7300 \
+  -out gpia-root.crt \
+  -subj "/C=VN/ST=Hanoi/L=Hanoi/O=Axioledger Global Payment Authority/OU=GPIA Root Operations/CN=AXIOLEDGER GLOBAL PAYMENT ROOT CA"
+```
+
+**nameConstraints** ràng buộc Root CA chỉ ký cert cho các TLD nội bộ:
+```
+permitted: DNS:.axq, DNS:.vpx, DNS:.sqx, DNS:.kpx, DNS:.vrq
+permitted: IP:192.168.0.0/255.255.255.0, IP:113.22.172.0/255.255.255.0
+```
+
+#### 9.2. Cross-Bridge CA (Cầu nối xuyên trụ cột)
+
+CA cấp trung gian duy nhất ký toàn bộ 5 Pillar CA và Payment Gateway cert — đảm bảo cô lập chain of trust:
+
+```bash
+openssl genrsa -out bridge-ca.key 4096
+openssl req -new -key bridge-ca.key -out bridge-ca.csr \
+  -subj "/C=VN/O=Axioledger Ecosystem/OU=Cross-Pillar Bridge Authority/CN=AXIOLEDGER CROSS-BRIDGE CA"
+
+openssl x509 -req -in bridge-ca.csr \
+  -CA gpia-root.crt -CAkey gpia-root.key -CAcreateserial \
+  -out bridge-ca.crt -days 3650 -sha384 -extfile bridge-ca-ext.cnf
+```
+
+#### 9.3. 5 Pillar Intermediate CAs
+
+| Pillar CA | Fingerprint SHA-256 | Hết hạn |
+| :---- | :---- | :---- |
+| AXQ Hub Settlement Authority | `8E:B9:50:08:B4:D8:F9:AA:6A:CD:F1:B7:73:EB:DD:91...` | Aug 2031 |
+| VPX Consensus Authority | `AC:EF:58:3E:42:A4:96:73:9E:5D:D3:AD:5E:C5:21:14...` | Aug 2031 |
+| SQX L2 Execution Authority | `7C:20:33:37:8E:F7:E4:D1:27:42:24:D8:52:EA:F9:53...` | Aug 2031 |
+| KPX DeFi Liquidity Authority | `66:7B:82:42:85:5D:7F:02:D3:A8:69:B2:06:7F:A1:15...` | Aug 2031 |
+| VRQ ZK Privacy Authority | `64:E2:F1:35:FE:E4:79:B4:EB:9B:B2:22:56:B3:66:AD...` | Aug 2031 |
+
+Tất cả Pillar CA được ký bởi **AXIOLEDGER CROSS-BRIDGE CA** với `pathlen:0` — không thể ủy quyền ký tiếp.
+
+#### 9.4. Issue TLS Certificates cho ANS Domains
+
+File cấu hình SAN (`ans-domains.ext`):
+```
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1  = axqprotocol.axq
+DNS.2  = axqchain.axq
+DNS.3  = vpxchain.vpx
+DNS.4  = sqxledger.sqx
+DNS.5  = kpxprotocol.kpx
+DNS.6  = vrqledger.vrq
+DNS.7  = api.axioledger.axq
+DNS.8  = rpc.axioledger.axq
+DNS.9  = axioledger-devnode.axq
+IP.1   = 192.168.0.47
+IP.2   = 113.22.172.197
+```
+
+Payment Gateway Cert (mTLS — `serverAuth + clientAuth`):
+```
+Serial:  1DF091B8FF6050378FB3FC9D69219AD05B7F07A9
+FP:      F9:BD:8B:3A:8C:ED:24:3F:FA:27:81:9D:32:DB:4C:0D:...
+Issuer:  AXIOLEDGER CROSS-BRIDGE CA
+Expires: Aug 31 2027 GMT
+SANs:    16 domains + 2 IPs
+```
+
+#### 9.5. Cài đặt Root CA vào Trust Store
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo cp gpia-root.crt /usr/local/share/ca-certificates/axioledger-gpia-root.crt
+sudo update-ca-certificates
+# File: /root/ssl/gpia/root-ca/gpia-root.crt (đã cài tại /etc/ssl/certs/axioledger-gpia-root.pem)
+```
+
+**macOS:**
+```bash
+sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain gpia-root.crt
+```
+
+**Windows (PowerShell — Run as Administrator):**
+```powershell
+Import-Certificate -FilePath "gpia-root.crt" -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+#### 9.6. Identity Declaration Document (v3.0)
+
+File: `/root/ssl/gpia/export/gpia-identity-declaration.json`
+
+```json
+{
+  "schema_version": "3.0.0",
+  "ecosystem": "AXIOLEDGER GLOBAL PAYMENT AUTHORITY",
+  "authority_class": "Tier-1 Global Settlement Infrastructure",
+  "jurisdiction": "VN — Vietnam, International Operations",
+  "node": {
+    "hostname": "axioledger-devnode",
+    "fqdn": "axioledger-devnode.axq",
+    "ip_lan": "192.168.0.47",
+    "ip_public": "113.22.172.197"
+  },
+  "root_ca": {
+    "cn": "AXIOLEDGER GLOBAL PAYMENT ROOT CA",
+    "serial": "02283C30000797C17F4E6FCCCF6B0B6F57298922",
+    "fingerprint_sha256": "81:71:DE:A4:CE:28:12:24:71:41:3C:BC:BF:4F:A0:16:...",
+    "valid_until": "Aug 26 2046 GMT",
+    "key_algorithm": "RSA-4096",
+    "signature_hash": "SHA-512"
+  },
+  "bridge_ca": {
+    "cn": "AXIOLEDGER CROSS-BRIDGE CA",
+    "fingerprint_sha256": "E4:61:7D:31:13:93:9F:A6:C9:DE:23:7B:68:13:40:C1:...",
+    "valid_until": "Aug 28 2036 GMT"
+  },
+  "intermediate_pillars": [
+    { "pillar": "Axioledger",     "ticker": "$AXQ", "ans_root": ".axq", "cn": "AXQ Hub Settlement Authority",  "fp": "8E:B9:50:08..." },
+    { "pillar": "Valiprecision",  "ticker": "$VPX", "ans_root": ".vpx", "cn": "VPX Consensus Authority",       "fp": "AC:EF:58:3E..." },
+    { "pillar": "Sequentichain",  "ticker": "$SQX", "ans_root": ".sqx", "cn": "SQX L2 Execution Authority",    "fp": "7C:20:33:37..." },
+    { "pillar": "Kinetoprotocol", "ticker": "$KPX", "ans_root": ".kpx", "cn": "KPX DeFi Liquidity Authority",  "fp": "66:7B:82:42..." },
+    { "pillar": "Veraciphers",    "ticker": "$VRQ", "ans_root": ".vrq", "cn": "VRQ ZK Privacy Authority",      "fp": "64:E2:F1:35..." }
+  ],
+  "supported_domains": [
+    "axqprotocol.axq", "axqchain.axq", "vpxchain.vpx",
+    "sqxledger.sqx", "kpxprotocol.kpx", "vrqledger.vrq",
+    "api.axioledger.axq", "rpc.axioledger.axq", "axioledger-devnode.axq"
+  ],
+  "endpoints": {
+    "ocsp": "http://ocsp.axioledger.axq",
+    "crl":  "http://crl.axioledger.axq/root.crl"
+  },
+  "compliance": ["PCI DSS Level 1", "ISO 27001", "AML/KYC/FATF", "MiCA", "GDPR"]
+}
+```
 
 ---
 
@@ -526,3 +874,61 @@ Toàn bộ nội dung, kiến trúc, mô hình toán học, tên thương hiệu
 >>> Thêm Legal Disclaimer (6 Điều khoản) ......... [OK]
 >>> Đóng gói Whitepaper v2.0 ...................... [HOÀN TẤT]
 ```
+## 11.9. ANS — AXIOLEDGER Name Service
+
+Hệ thống **AXIOLEDGER Name Service (ANS)** là hạ tầng phân giải định danh phi tập trung của toàn bộ hệ sinh thái — tương đương với DNS nhưng tích hợp ZK-DID, multi-chain address resolution và on-chain ownership.
+
+### Namespace Kiến trúc
+
+ANS vận hành **5 TLD nội bộ** tương ứng với 5 trụ cột:
+
+| TLD | Trụ cột | Ví dụ | Mục đích |
+|---|---|---|---|
+| `.axq` | Axioledger Hub | `treasury.axq`, `governance.axq` | Hub addresses, DAO endpoint |
+| `.vpx` | Valiprecision | `validator-001.vpx`, `staking.vpx` | Validator node identity |
+| `.sqx` | Sequentichain | `sequencer.sqx`, `rollup.sqx` | L2 service endpoints |
+| `.kpx` | Kinetoprotocol | `pool-usdc-axq.kpx`, `rwa-treasury.kpx` | DeFi protocol addresses |
+| `.vrq` | Veraciphers | `did-auth.vrq`, `kyc-gate.vrq` | ZK-DID identity, compliance |
+
+### Thuật toán Namehash (ENS-compatible)
+
+```
+namehash("alice.axq") =
+  keccak256(
+    keccak256(0x0000...0000 || keccak256("axq")) || keccak256("alice")
+  )
+```
+
+### Stack Kỹ thuật
+
+```
+[Client / dApp]
+     │
+     ▼
+[CoreDNS Port 53]  ← intercept 5 custom TLDs
+     │
+     ▼
+[ANS Resolver — Node.js :8053]
+     │
+     ├─► [Redis Cache — TTL 60s, <5ms]
+     ├─► [PostgreSQL — off-chain registry]
+     └─► [Foundry Anvil — on-chain contracts]
+```
+
+**Smart Contracts:** `ANSRegistry` · `PublicResolver` · `ReverseRegistrar`  
+**Full spec:** [`core/api/ans-service-spec.md`](../core/api/ans-service-spec.md)
+
+### NPM Scope & Identity Map
+
+| Trụ cột | NPM Scope | GitHub Org |
+|---|---|---|
+| Axioledger | `@axioledger/*` | `github.com/axioledger` |
+| Valiprecision | `@valiprecision/*` | `github.com/valiprecision` |
+| Sequentichain | `@sequentichain/*` | `github.com/sequentichain` |
+| Kinetoprotocol | `@kinetoprotocol/*` | `github.com/kinetoprotocol` |
+| Veraciphers | `@veraciphers/*` | `github.com/veraciphers` |
+
+> **Lưu ý:** Scope 3 ký tự (`@axq`, `@vpx`...) đã bị squat/reserved trên npm. Sử dụng tên đầy đủ thương hiệu.
+
+---
+

@@ -52,3 +52,9 @@ test.txt
 *.tmp
 *.bak
 pland/
+check_ssh_keys.sh
+ssh_key_report_20260831_023944.txt
+C:UsersAdmin.sshaxioledger_root
+C:UsersAdmin.sshaxioledger_root.pub
+.npm
+package-lock.json

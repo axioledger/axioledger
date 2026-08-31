@@ -13,9 +13,16 @@ cat <<'HDR'
            AXIOLEDGER — OMNI GITHUB AUTOMATION CONTROLLER  v0.0.0
 ════════════════════════════════════════════════════════════════════════════════
  Service Account : 315885655+davictran76@users.noreply.github.com
+ Node            : axioledger-devnode · 192.168.0.47 (wifi0, LAN Primary)
  Token Status    : [🟢 ACTIVE] — Super Admin (Full Scope)
  Organizations   : axioledger · kinetoprotocol · sequentichain
                    valiprecision · veraciphers
+────────────────────────────────────────────────────────────────────────────────
+ API GATEWAY     : https://api.axioledger.axq/v1/
+   /core/  → Hub $AXQ       /vp/  → VALIPRECISION $VPX
+   /sqx/   → SEQUENTICHAIN  /kpx/ → KINETOPROTOCOL $KPX
+   /vrq/   → VERACIPHERS
+ Schema          : core/api/api-schema-v0.0.0.md
 ────────────────────────────────────────────────────────────────────────────────
  CHỌN WORKFLOW:
 
