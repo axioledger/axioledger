@@ -940,6 +940,270 @@ namehash("alice.axq") =
 **Block 0** của Sổ cái Lõi AXIOLEDGER Hub (`$AXQ`) được thiết lập tại thời khắc chính xác:
 
 ```
+Genesis Timestamp : 2026-08-31T10:22:20Z (UTC)          ← Mốc Chính thức
+Chain ID          : axioledger-core-0
+Network           : axioledger-mainnet-genesis
+Config File       : core/config/genesis-block.json
+Denom             : uaxq  (1 AXQ = 10⁶ uaxq)
+```
+
+> Đây là khoảnh khắc **10.000 tỷ token $AXQ được đúc duy nhất một lần** và phân bổ vĩnh viễn vào 5 Địa chỉ Genesis. Không có cơ chế remint. Không có admin key. `admin_key = null`. Mọi thay đổi tham số chỉ qua TreasuryDAO governance vote.
+
+### Phân Bổ 10.000 Tỷ $AXQ — Cosmos-SDK Format
+
+```
+Tổng cung: 10,000,000,000,000 AXQ = 10,000,000,000,000,000,000 uaxq
+
+┌───────────────────────────┬──────┬─────────────────────────────────────┬──────────────────────────────────┐
+│  Địa chỉ Genesis          │  %   │  uaxq Amount                        │  Cơ chế Khóa                     │
+├───────────────────────────┼──────┼─────────────────────────────────────┼──────────────────────────────────┤
+│  axq1_kpx_rwa_vault       │  30% │  3,000,000,000,000,000,000          │  Smart contract controlled       │
+│  axq1_vpx_subsidy_pool    │  25% │  2,500,000,000,000,000,000          │  50-year logarithmic decay       │
+│  axq1_treasury_dao        │  20% │  2,000,000,000,000,000,000          │  On-chain governance only        │
+│  axq1_community_amm       │  15% │  1,500,000,000,000,000,000          │  Vesting schedule                │
+│  axq1_core_team_vesting   │  10% │  1,000,000,000,000,000,000          │  5-year cliff vesting            │
+├───────────────────────────┼──────┼─────────────────────────────────────┼──────────────────────────────────┤
+│  TOTAL SUPPLY             │ 100% │ 10,000,000,000,000,000,000          │  Hard cap — bất biến             │
+└───────────────────────────┴──────┴─────────────────────────────────────┴──────────────────────────────────┘
+```
+
+### Tham Số ZK-OBFT Mã Hóa Vào Genesis
+
+| Tham số | Giá trị | Ý nghĩa |
+|---|---|---|
+| `alpha` | `0.6` | Trọng số Uptime trong R_i formula |
+| `beta` | `0.4` | Trọng số Bandwidth trong R_i formula |
+| `gamma` | `1000` | Hệ số khuếch đại bandwidth |
+| `micro_epoch_ms` | `400` | Block time target (ms) |
+| `max_gas` | `600,000,000` | Gas limit per block |
+| `slash_double_sign` | `100%` | Instant Slashing — Điều IV |
+| `emission_kappa` | `0.03` | RWA TVL emission coefficient |
+| `emission_mu` | `0.001` | Transaction volume coefficient |
+
+**Emission equation bất biến:**
+```
+Emission(t) = κ · ln(1 + ΔTVL_RWA) + μ · TxVolume(t) − Burn(t)
+Nếu ΔTVL_RWA = 0 → Emission = 0  (lạm phát tự dừng — auto_halt_on_zero_rwa: true)
+```
+
+---
+
+## 11.11. KINETOPROTOCOL — Cầu Nối Liên Chuỗi & Kiểm Duyệt Gateway
+
+### Kiến Trúc ZK-Relay Bridge (Không phải Lock & Mint truyền thống)
+
+KINETOPROTOCOL ($KPX) không dùng cơ chế "Khóa và Đúc" (Lock & Mint) đa chữ ký truyền thống. Thay vào đó: **ZK-Relay Bridge** — mọi payload đều được VPX ($VPX) giám sát và xác nhận qua ZK-OBFT:
+
+```
+[Nguồn: ETH / ARB / SOL]
+        │ bridgeOut() + ZK-Proof + VRQ compliance
+        ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  KPXRouterGateway.sol (core/contracts/kpx/KPXRouterGateway.sol)    │
+│                                                                     │
+│  Security Layers (thứ tự thực thi):                                 │
+│  [1] VRQ Scanner: isFlagged(caller) + isFlagged(token)             │
+│  [2] ZK: circuitVersion == requiredCircuitVersion                  │
+│  [3] ZK: proofNonce chưa dùng (anti-replay)                        │
+│  [4] ZK: verifyCompliance(proof, kycCommitment)                    │
+│  [5] Chain whitelist: ETH(60) · ARB(42161) · SOL(501)              │
+│  [6] Amount limit: amount <= maxBridgeAmountPerTx                  │
+│  [7] Deadline: block.number <= deadline                             │
+│  [8] SafeERC20.safeTransferFrom (no silent failure)                │
+└─────────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+[MPC Relayer Network — 2/3 Threshold]
+  Relayer 1 (GL-CORE-FIN-NODE01) ─ sign
+  Relayer 2 (GL-CORE-FIN-NODE02) ─ sign  → ≥ 2/3 threshold unlock
+  Relayer 3 (GL-CORE-FIN-NODE03) ─ sign
+        │
+        ▼ bridgeIn() — CEI Pattern (Checks-Effects-Interactions)
+  [1] bridgeFulfilled[id] == false  ← REPLAY PREVENTION
+  [2] VRQ: isFlagged(recipient)
+  [3] bridgeFulfilled[id] = true    ← STATE UPDATE TRƯỚC TRANSFER
+  [4] SafeERC20.safeTransfer(recipient)
+        │
+        ▼
+[Recipient nhận tài sản — Finality confirmed]
+```
+
+### Phân Luồng Thanh Khoản: AMM vs Dark Pool
+
+```
+swapExactTokensForTokensWithPrivacy()
+        │
+        ├─ amountIn <= institutionalThreshold → Standard AMM (public orderbook)
+        │
+        └─ amountIn > institutionalThreshold  → IKPXDarkPool
+                                                 Pedersen commitment
+                                                 ZK Match Proof
+                                                 No frontrunning
+                                                 No orderbook impact
+```
+
+### Foundry Test Suite — Bảo Vệ Reentrancy
+
+Trước khi deploy, toàn bộ test suite Foundry phải PASS:
+
+```
+forge test --match-path test/KPXRouterGateway.t.sol -vvvv
+
+T1. Deployment & Constructor     (2 tests)
+T2. VRQ Security Pre-checks      (4 tests)  ← isFlagged() là CHECK ĐẦU TIÊN
+T3. *** REENTRANCY ATTACKS ***   (5 tests)  ← CRITICAL
+    T3.1 bridgeOut → fallback → bridgeOut   (ReentrancyGuard phải block)
+    T3.2 swap → DarkPool callback → swap    (nonReentrant phải block)
+    T3.3 bridgeIn double-spend              (fulfilled mapping phải block)
+    T3.4 ZK Proof replay attack             (usedProofNonces phải block)
+    T3.5 nonReentrant lock release          (lock phải release sau call)
+T4. Bridge Security              (7 tests)
+T5. ZK-Proof Security            (2 tests)
+T6. Governance & Emergency       (6 tests)
+T7. AMM Swap Security            (3 tests)
+T8. Fuzz Tests (10,000 runs)     (5 tests)
+HP. Happy Path                   (2 tests)
+
+Tổng: 36 tests · Fuzz: 5 × 10,000 = 50,000 runs
+```
+
+**Files:**
+- Contract: [`core/contracts/kpx/KPXRouterGateway.sol`](../core/contracts/kpx/KPXRouterGateway.sol) — 455 lines
+- Test:     [`core/contracts/kpx/test/KPXRouterGateway.t.sol`](../core/contracts/kpx/test/KPXRouterGateway.t.sol) — 808 lines
+- Review:   [`core/contracts/KPXRouter-security-review.md`](../core/contracts/KPXRouter-security-review.md)
+- Config:   [`core/config/genesis-block.json`](../core/config/genesis-block.json)
+
+### Cổng Deploy Cuối Cùng
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  ĐIỀU KIỆN DEPLOY KPXRouterGateway.sol                          │
+│                                                                  │
+│  [ ] forge test — 36/36 PASS (zero failures)                   │
+│  [ ] forge test --fuzz-runs 10000 — 5 fuzz suites PASS         │
+│  [ ] slither — 0 Critical, 0 High                               │
+│  [ ] External audit report sạch (zero Critical/High)           │
+│  [ ] KPXRouter-security-review.md — 30/30 checks PASSED        │
+│  [ ] TreasuryDAO governance vote thông qua (>50% quorum)       │
+│  [ ] 48h timelock sau DAO approval                              │
+│  [ ] Testnet stable ≥ 30 ngày                                  │
+│  [ ] GL-LEGAL-COMP-01 ký                                        │
+│  [ ] GL-ARCH-CORE-ENGINE ký                                     │
+│                                                                  │
+│  Current: 🔴 BLOCKED — Awaiting test execution + audit         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 12. TUYÊN BỐ MIỄN TRỪ TRÁCH NHIỆM PHÁP LÝ (LEGAL DISCLAIMER)
+
+> **QUAN TRỌNG — VUI LÒNG ĐỌC KỸ TRƯỚC KHI SỬ DỤNG TÀI LIỆU NÀY**
+
+### 12.1. Không phải Lời mời Đầu tư
+
+Tài liệu này được soạn thảo nhằm mục đích **cung cấp thông tin kỹ thuật và kiến trúc** về hệ sinh thái AXIOLEDGER. Tài liệu **không cấu thành** lời đề nghị, lời mời, hay tư vấn đầu tư, chứng khoán, hoặc bất kỳ công cụ tài chính nào theo pháp luật của bất kỳ quốc gia hoặc vùng lãnh thổ nào.
+
+### 12.2. Rủi ro Tài chính
+
+Đầu tư vào tài sản kỹ thuật số và token tiền mã hóa mang theo rủi ro cao, bao gồm nhưng không giới hạn ở: mất toàn bộ vốn, biến động giá cao, rủi ro pháp lý, rủi ro kỹ thuật, và rủi ro thanh khoản. **Bạn không nên đầu tư số tiền mà bạn không thể chịu đựng được việc mất trắng.**
+
+### 12.3. Thông tin Mang tính Dự báo (Forward-Looking Statements)
+
+Các tuyên bố liên quan đến kế hoạch tương lai, lộ trình phát triển, mục tiêu hiệu năng (TPS, TVL, số lượng người dùng...) và mô hình kinh tế trong tài liệu này mang bản chất **dự báo** và **không phải là cam kết đảm bảo**. Kết quả thực tế có thể khác biệt đáng kể so với những gì được mô tả, do các yếu tố kỹ thuật, thị trường, pháp lý, hoặc các rủi ro không lường trước.
+
+### 12.4. Tuân thủ Pháp luật Địa phương
+
+Việc mua, bán, sở hữu, hoặc sử dụng token $AXQ và các token trong hệ sinh thái ($VPX, $SQX, $KPX, $VRQ) có thể bị hạn chế hoặc cấm tại một số quốc gia hoặc vùng lãnh thổ. **Bạn có trách nhiệm tự xác minh và tuân thủ đầy đủ các quy định pháp luật hiện hành tại địa phương của mình** trước khi tham gia vào bất kỳ hoạt động nào liên quan đến hệ sinh thái AXIOLEDGER.
+
+### 12.5. Thay đổi Nội dung
+
+Đội ngũ phát triển AXIOLEDGER bảo lưu quyền cập nhật, sửa đổi, hoặc thay thế bất kỳ phần nào của tài liệu này mà không cần thông báo trước. Phiên bản mới nhất và có giá trị pháp lý nhất luôn là phiên bản được công bố chính thức trên kho lưu trữ [`axioledger/axioledger`](https://github.com/axioledger/axioledger).
+
+### 12.6. Sở hữu Trí tuệ
+
+Toàn bộ nội dung, kiến trúc, mô hình toán học, tên thương hiệu và logo trong tài liệu này là **tài sản sở hữu trí tuệ độc quyền** của đội ngũ phát triển AXIOLEDGER. Nghiêm cấm sao chép, phân phối, hoặc sử dụng thương mại khi chưa có sự cho phép bằng văn bản.
+
+---
+
+*Tài liệu này được phê duyệt bởi Hội đồng 8 Cố vấn và Kiến trúc sư trưởng AXIOLEDGER.*
+*Phiên bản 2.0 — Genesis Pact Edition. Genesis Block đang chờ lệnh biên dịch cuối cùng.*
+
+```
+[root@axioledger-core ~]# ./compile_whitepaper.sh --version=2.0 --sync=charter
+>>> Đồng bộ với OFFICIAL-CHARTER v2.0 ........... [OK]
+>>> Tích hợp Roadmap 5 Giai đoạn ................. [OK]
+>>> Bổ sung Tokenomics Bảng Số Tuyệt đối ......... [OK]
+>>> Thêm Technical Appendix (Benchmark + Rust) ... [OK]
+>>> Thêm Legal Disclaimer (6 Điều khoản) ......... [OK]
+>>> Đóng gói Whitepaper v2.0 ...................... [HOÀN TẤT]
+```
+## 11.9. ANS — AXIOLEDGER Name Service
+
+Hệ thống **AXIOLEDGER Name Service (ANS)** là hạ tầng phân giải định danh phi tập trung của toàn bộ hệ sinh thái — tương đương với DNS nhưng tích hợp ZK-DID, multi-chain address resolution và on-chain ownership.
+
+### Namespace Kiến trúc
+
+ANS vận hành **5 TLD nội bộ** tương ứng với 5 trụ cột:
+
+| TLD | Trụ cột | Ví dụ | Mục đích |
+|---|---|---|---|
+| `.axq` | Axioledger Hub | `treasury.axq`, `governance.axq` | Hub addresses, DAO endpoint |
+| `.vpx` | Valiprecision | `validator-001.vpx`, `staking.vpx` | Validator node identity |
+| `.sqx` | Sequentichain | `sequencer.sqx`, `rollup.sqx` | L2 service endpoints |
+| `.kpx` | Kinetoprotocol | `pool-usdc-axq.kpx`, `rwa-treasury.kpx` | DeFi protocol addresses |
+| `.vrq` | Veraciphers | `did-auth.vrq`, `kyc-gate.vrq` | ZK-DID identity, compliance |
+
+### Thuật toán Namehash (ENS-compatible)
+
+```
+namehash("alice.axq") =
+  keccak256(
+    keccak256(0x0000...0000 || keccak256("axq")) || keccak256("alice")
+  )
+```
+
+### Stack Kỹ thuật
+
+```
+[Client / dApp]
+     │
+     ▼
+[CoreDNS Port 53]  ← intercept 5 custom TLDs
+     │
+     ▼
+[ANS Resolver — Node.js :8053]
+     │
+     ├─► [Redis Cache — TTL 60s, <5ms]
+     ├─► [PostgreSQL — off-chain registry]
+     └─► [Foundry Anvil — on-chain contracts]
+```
+
+**Smart Contracts:** `ANSRegistry` · `PublicResolver` · `ReverseRegistrar`  
+**Full spec:** [`core/api/ans-service-spec.md`](../core/api/ans-service-spec.md)
+
+### NPM Scope & Identity Map
+
+| Trụ cột | NPM Scope | GitHub Org |
+|---|---|---|
+| Axioledger | `@axioledger/*` | `github.com/axioledger` |
+| Valiprecision | `@valiprecision/*` | `github.com/valiprecision` |
+| Sequentichain | `@sequentichain/*` | `github.com/sequentichain` |
+| Kinetoprotocol | `@kinetoprotocol/*` | `github.com/kinetoprotocol` |
+| Veraciphers | `@veraciphers/*` | `github.com/veraciphers` |
+
+> **Lưu ý:** Scope 3 ký tự (`@axq`, `@vpx`...) đã bị squat/reserved trên npm. Sử dụng tên đầy đủ thương hiệu.
+
+---
+
+
+## 11.10. GENESIS BLOCK — Sổ Cái Khởi Tạo
+
+### Thời Điểm Đúc Token Duy Nhất (One-Time Mint)
+
+**Block 0** của Sổ cái Lõi AXIOLEDGER Hub (`$AXQ`) được thiết lập tại thời khắc chính xác:
+
+```
 Genesis Timestamp : 2026-08-31T09:41:34Z (UTC)
 Human Readable    : Monday, August 31, 2026 — 09:41:34 UTC
 Unix Epoch        : 1788169294
