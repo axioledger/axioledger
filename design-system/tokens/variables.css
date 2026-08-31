@@ -2,7 +2,13 @@
    Axioledger Design System — CSS Custom Properties
    Generated from: design-system/tokens/color-tokens.json
                    design-system/tokens/typography-tokens.json
+                   design-system/tokens/icon-tokens.css
+   Icon System:    asset/icon/linear/ (919 SVG)
+                   asset/icon/bold/   (979 SVG)
    ============================================================= */
+
+/* @import "icon-tokens.css"; */
+/* Hoặc link riêng: <link rel="stylesheet" href="icon-tokens.css"> */
 
 /* ── Light Mode (default) ──────────────────────────────────── */
 :root {

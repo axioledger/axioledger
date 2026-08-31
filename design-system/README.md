@@ -11,7 +11,14 @@
 design-system/
 ├── tokens/
 │   ├── color-tokens.md       ← Semantic color tokens (Light & Dark mode)
-│   └── typography-tokens.md  ← Line-height, letter-spacing, token mapping
+│   ├── typography-tokens.md  ← Line-height, letter-spacing, token mapping
+│   ├── variables.css         ← CSS Custom Properties (import icon-tokens.css)
+│   └── icon-tokens.css       ← Icon color/size tokens + .icon CSS utility classes  ← NEW
+├── guidelines/
+│   ├── dark-mode.md          ← CSS data-theme approach
+│   ├── accessibility.md      ← WCAG AA, contrast matrix
+│   ├── icon-usage.md         ← Cách dùng SVG icon nội bộ (không dùng emoji ngoài)  ← NEW
+│   └── icon-catalog.md       ← Toàn bộ 919 icons phân loại theo 23 nhóm            ← NEW
 ├── components/
 │   ├── buttons.md            ← 4 sizes × 5 states × 3 types
 │   ├── inputs.md             ← Text, Search, OTP, Checkbox, Radio, Dropdown, Date Picker
