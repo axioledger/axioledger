@@ -1,17 +1,17 @@
 {
   "name": "@axioledger/evm-interop",
   "version": "0.1.0",
-  "description": "EVM interop layer — ABI codegen, typed contract wrappers, wagmi hook factories",
-  "main":   "dist/index.js",
-  "types":  "dist/index.d.ts",
+  "description": "EVM interop layer \u2014 ABI codegen, typed contract wrappers, wagmi hook factories",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build":     "tsc -p tsconfig.build.json",
+    "build": "echo \"stub \u2014 implement in Phase 5\"",
     "typecheck": "tsc --noEmit",
-    "clean":     "rm -rf dist"
+    "clean": "rm -rf dist"
   },
   "license": "MIT",
   "dependencies": {
-    "viem":  "^2.17.0",
+    "viem": "^2.17.0",
     "wagmi": "^2.12.7"
   },
   "devDependencies": {
