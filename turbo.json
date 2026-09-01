@@ -1,0 +1,43 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs":  ["src/**", "contracts/**", "*.ts", "*.json", "!**/*.test.*"],
+      "outputs": ["dist/**", "out/**", ".next/**", "!.next/cache/**", "artifacts/**"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs":  ["src/**", "test/**", "contracts/**"],
+      "outputs": ["coverage/**"],
+      "cache": false
+    },
+    "lint": {
+      "inputs":  ["src/**", "*.ts", ".eslintrc*", "eslint.config.*"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs":  ["src/**", "tsconfig*.json"],
+      "outputs": []
+    },
+    "dev": {
+      "cache":     false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    },
+    "contracts:build": {
+      "inputs":  ["contracts/**", "src/**", "foundry.toml", "hardhat.config.*"],
+      "outputs": ["out/**", "artifacts/**", "typechain-types/**"]
+    },
+    "contracts:test": {
+      "dependsOn": ["contracts:build"],
+      "inputs":  ["test/**", "contracts/**"],
+      "outputs": [],
+      "cache": false
+    }
+  }
+}

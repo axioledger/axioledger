@@ -1,0 +1,16 @@
+{
+  "name": "@valiprecision/vpx-node",
+  "version": "1.0.0",
+  "description": "VPX Oracle Node — off-chain price aggregator and on-chain pusher for AXIOLEDGER",
+  "main":   "src/oracle-node.js",
+  "scripts": {
+    "start":   "node src/oracle-node.js",
+    "dev":     "nodemon src/oracle-node.js",
+    "test":    "jest --forceExit --detectOpenHandles",
+    "test:ci": "jest --forceExit --detectOpenHandles --ci --coverage",
+    "lint":    "eslint src/**/*.js",
+    "clean":   "rm -rf coverage"
+  },
+  "license": "BSL-1.1",
+  "engines": { "node": ">=20.0.0" }
+}

@@ -1,0 +1,17 @@
+node_modules/
+.turbo/
+dist/
+out/
+.next/
+coverage/
+artifacts/
+cache/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+
+# Foundry
+forge-cache/
+broadcast/

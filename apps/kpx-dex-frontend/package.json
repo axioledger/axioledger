@@ -1,0 +1,24 @@
+{
+  "name": "kpx-dex-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KPX DEX Frontend — gasless token swaps via KPXRouterGateway",
+  "scripts": {
+    "dev":       "next dev",
+    "build":     "next build",
+    "typecheck": "tsc --noEmit",
+    "clean":     "rm -rf .next dist"
+  },
+  "dependencies": {
+    "next":      "15.1.3",
+    "react":     "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@veraciphers/axio-design-system": "4.0.0",
+    "viem":  "^2.17.0",
+    "wagmi": "^2.12.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "typescript":   "^5.5.4"
+  }
+}
