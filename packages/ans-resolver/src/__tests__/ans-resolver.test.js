@@ -23,7 +23,7 @@ jest.mock('viem/chains', () => ({
 }));
 
 const REGISTRY = '0x' + 'C'.repeat(40);
-const { ANSResolver, SUPPORTED_TLDS, parseName, computeNameHash } = require('../src/index');
+const { ANSResolver, SUPPORTED_TLDS, parseName, computeNameHash } = require('../index');
 
 function getReadMock() {
   return require('viem').__readContract;
