@@ -1,5 +1,5 @@
-import { WalletHome } from '../components/WalletHome';
+import { WalletHomeClient } from '../components/WalletHomeClient';
 
 export default function WalletPage() {
-  return <WalletHome />;
+  return <WalletHomeClient />;
 }

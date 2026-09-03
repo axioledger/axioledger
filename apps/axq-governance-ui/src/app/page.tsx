@@ -1,5 +1,5 @@
-import { GovernanceDashboard } from '../components/GovernanceDashboard';
+import { GovernanceDashboardClient } from '../components/GovernanceDashboardClient';
 
 export default function GovernancePage() {
-  return <GovernanceDashboard />;
+  return <GovernanceDashboardClient />;
 }

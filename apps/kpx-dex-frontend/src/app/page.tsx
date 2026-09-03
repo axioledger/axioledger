@@ -1,5 +1,5 @@
-import { DEXDashboard } from '../components/DEXDashboard';
+import { DEXDashboardClient } from '../components/DEXDashboardClient';
 
 export default function DEXPage() {
-  return <DEXDashboard />;
+  return <DEXDashboardClient />;
 }

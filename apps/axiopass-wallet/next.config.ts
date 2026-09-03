@@ -133,6 +133,21 @@ const nextConfig: NextConfig = {
     config.resolve.extensionAlias = {
       '.js': ['.ts', '.tsx', '.js'],
     };
+    // Stub missing optional peer deps from wagmi transitive deps.
+    // None of these are used by AXIOLEDGER wallet directly.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      // x402 payment protocol — pulled in by @coinbase/cdp-sdk
+      '@x402/evm':              false,
+      '@x402/core/client':      false,
+      '@x402/evm/exact/client': false,
+      '@x402/evm/upto/client':  false,
+      '@x402/svm/exact/client': false,
+      // React Native AsyncStorage — pulled in by @metamask/sdk browser bundle
+      '@react-native-async-storage/async-storage': false,
+      // pino-pretty — optional CLI formatter pulled in by @walletconnect/logger
+      'pino-pretty': false,
+    };
     return config;
   },
 };
