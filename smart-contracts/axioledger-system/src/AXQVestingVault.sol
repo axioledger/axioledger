@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSL-1.1
-// AXIOLEDGER ($AXQ) — Linear Vesting Vault
+// AXIOLEDGER ($AXQ) - Linear Vesting Vault
 //
 // 4-year linear vesting with 1-year cliff.
 // Designed for Core Team allocation (12% = 60B $AXQ).
 //
 // Timeline per beneficiary:
-//   Month  0-12 : cliff — nothing claimable
-//   Month 12-48 : linear unlock — 1/36 of remainder per month
+//   Month  0-12 : cliff - nothing claimable
+//   Month 12-48 : linear unlock - 1/36 of remainder per month
 //   Month  48+  : fully vested
 //
 // Features:
@@ -23,17 +23,17 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @title AXQVestingVault — 4-year linear vesting with 1-year cliff
+/// @title AXQVestingVault - 4-year linear vesting with 1-year cliff
 /// @notice Distributes Core Team $AXQ allocation over 48 months.
 contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    // ── Constants ────────────────────────────────────────────────────────────
+    // -- Constants ------------------------------------------------------------
 
-    uint64 public constant CLIFF_DURATION  = 365 days;   // 1 year
-    uint64 public constant VESTING_DURATION = 3 * 365 days; // 3 years post-cliff (total 4yr)
+    uint64 public constant CLIFF_DURATION   = 365 days;       // 1 year
+    uint64 public constant VESTING_DURATION = 3 * 365 days;   // 3 years post-cliff (total 4yr)
 
-    // ── Types ────────────────────────────────────────────────────────────────
+    // -- Types ----------------------------------------------------------------
 
     struct Grant {
         uint256 totalAmount;    // total tokens granted
@@ -42,7 +42,7 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
         bool    revoked;        // revoked by DAO
     }
 
-    // ── State ────────────────────────────────────────────────────────────────
+    // -- State ----------------------------------------------------------------
 
     IERC20  public immutable AXQ_TOKEN;
     address public           treasury;    // revoked tokens return here
@@ -52,14 +52,14 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
 
     uint256 public totalAllocated;  // sum of all active grant amounts
 
-    // ── Events ───────────────────────────────────────────────────────────────
+    // -- Events ---------------------------------------------------------------
 
     event GrantAdded(address indexed beneficiary, uint256 amount, uint64 startTime);
     event TokensClaimed(address indexed beneficiary, uint256 amount);
     event GrantRevoked(address indexed beneficiary, uint256 unvestedReturned);
     event TreasuryUpdated(address newTreasury);
 
-    // ── Errors ───────────────────────────────────────────────────────────────
+    // -- Errors ---------------------------------------------------------------
 
     error VEST_GrantExists();
     error VEST_NoGrant();
@@ -70,11 +70,11 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
     error VEST_ZeroAddress();
     error VEST_InsufficientBalance();
 
-    // ── Constructor ──────────────────────────────────────────────────────────
+    // -- Constructor ----------------------------------------------------------
 
     /// @param _axqToken  Deployed AXQ token address
     /// @param _treasury  Address to receive revoked unvested tokens
-    /// @param _dao       DAO multisig — owns this contract
+    /// @param _dao       DAO multisig - owns this contract
     constructor(address _axqToken, address _treasury, address _dao)
         Ownable(_dao)
     {
@@ -84,7 +84,7 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
         treasury  = _treasury;
     }
 
-    // ── DAO: Grant Management ─────────────────────────────────────────────────
+    // -- DAO: Grant Management ------------------------------------------------
 
     /// @notice Add a new vesting grant. DAO must have approved this contract to
     ///         transfer `amount` tokens beforehand, OR hold a sufficient balance.
@@ -127,9 +127,8 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
         if (g.totalAmount == 0)  revert VEST_NoGrant();
         if (g.revoked)           revert VEST_AlreadyRevoked();
 
-        uint256 vested   = _vestedAmount(g);
-        uint256 claimable = vested - g.claimed;
-        uint256 unvested  = g.totalAmount - vested;
+        uint256 vestedAmt    = _vestedAmount(g);
+        uint256 unvested     = g.totalAmount - vestedAmt;
 
         g.revoked = true;
         totalAllocated -= unvested;
@@ -142,34 +141,34 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
         emit GrantRevoked(beneficiary, unvested);
     }
 
-    // ── Beneficiary: Claim ───────────────────────────────────────────────────
+    // -- Beneficiary: Claim ---------------------------------------------------
 
     /// @notice Claim all currently vested (and unclaimed) tokens.
     function claim() external nonReentrant whenNotPaused {
         Grant storage g = grants[msg.sender];
         if (g.totalAmount == 0) revert VEST_NoGrant();
 
-        uint256 vested    = _vestedAmount(g);
-        uint256 claimable = vested - g.claimed;
-        if (claimable == 0) {
+        uint256 vestedAmt    = _vestedAmount(g);
+        uint256 claimableAmt = vestedAmt - g.claimed;
+        if (claimableAmt == 0) {
             if (block.timestamp < g.startTime + CLIFF_DURATION) revert VEST_CliffNotReached();
             revert VEST_NothingToClaim();
         }
 
-        g.claimed += claimable;
-        AXQ_TOKEN.safeTransfer(msg.sender, claimable);
+        g.claimed += claimableAmt;
+        AXQ_TOKEN.safeTransfer(msg.sender, claimableAmt);
 
-        emit TokensClaimed(msg.sender, claimable);
+        emit TokensClaimed(msg.sender, claimableAmt);
     }
 
-    // ── View helpers ─────────────────────────────────────────────────────────
+    // -- View helpers ---------------------------------------------------------
 
     /// @notice How many tokens are currently claimable by `beneficiary`.
     function claimable(address beneficiary) external view returns (uint256) {
         Grant storage g = grants[beneficiary];
         if (g.totalAmount == 0 || g.revoked) return 0;
-        uint256 vested = _vestedAmount(g);
-        return vested > g.claimed ? vested - g.claimed : 0;
+        uint256 vestedAmt = _vestedAmount(g);
+        return vestedAmt > g.claimed ? vestedAmt - g.claimed : 0;
     }
 
     /// @notice Total vested amount (claimed + claimable) for `beneficiary`.
@@ -191,7 +190,7 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
         return beneficiaries.length;
     }
 
-    // ── DAO: Emergency controls ───────────────────────────────────────────────
+    // -- DAO: Emergency controls ----------------------------------------------
 
     function pause()   external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
@@ -202,16 +201,10 @@ contract AXQVestingVault is Ownable2Step, Pausable, ReentrancyGuard {
         emit TreasuryUpdated(_treasury);
     }
 
-    // ── Internal ─────────────────────────────────────────────────────────────
+    // -- Internal -------------------------------------------------------------
 
     /// @dev Linear vesting after cliff. Returns total tokens earned to date.
     function _vestedAmount(Grant storage g) internal view returns (uint256) {
-        if (g.revoked) {
-            // After revocation, only what was vested at revocation time is claimable.
-            // We don't store revocation timestamp, so return total − unvested based on now.
-            // Simplified: allow claiming up to current vested amount (no new accrual).
-        }
-
         uint64 now_    = uint64(block.timestamp);
         uint64 cliff   = g.startTime + CLIFF_DURATION;
         uint64 endTime = g.startTime + CLIFF_DURATION + VESTING_DURATION;
