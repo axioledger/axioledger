@@ -133,8 +133,8 @@ const nextConfig: NextConfig = {
     config.resolve.extensionAlias = {
       '.js': ['.ts', '.tsx', '.js'],
     };
-    // Stub missing optional peer deps from wagmi transitive deps.
-    // None of these are used by AXIOLEDGER wallet directly.
+    // Stub missing optional / Node-only peer deps from wagmi transitive deps.
+    // None of these are used by AXIOLEDGER wallet in the browser.
     config.resolve.alias = {
       ...config.resolve.alias,
       // x402 payment protocol — pulled in by @coinbase/cdp-sdk
@@ -147,6 +147,8 @@ const nextConfig: NextConfig = {
       '@react-native-async-storage/async-storage': false,
       // pino-pretty — optional CLI formatter pulled in by @walletconnect/logger
       'pino-pretty': false,
+      // ox/tempo VirtualMaster — dynamic require used by viem tempo chain (not needed)
+      'ox/tempo': false,
     };
     return config;
   },

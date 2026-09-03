@@ -7,7 +7,7 @@
  */
 
 import { http, createConfig } from 'wagmi';
-import { hardhat, sepolia, mainnet } from 'wagmi/chains';
+import { hardhat, sepolia, mainnet } from 'viem/chains';
 import { injected, metaMask } from 'wagmi/connectors';
 
 export const wagmiConfig = createConfig({

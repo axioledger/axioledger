@@ -10,7 +10,16 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, background: 'var(--color-background)' }}>
+      <head>
+        {/* Work Sans — AXIO Design System primary typeface */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body style={{ margin: 0, fontFamily: "'Work Sans', sans-serif" }}>
         <Providers>{children}</Providers>
       </body>
     </html>

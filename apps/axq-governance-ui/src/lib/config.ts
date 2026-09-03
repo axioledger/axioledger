@@ -6,7 +6,7 @@
  */
 
 import { http, createConfig } from 'wagmi';
-import { sepolia, mainnet } from 'wagmi/chains';
+import { sepolia, mainnet } from 'viem/chains';
 import { injected, metaMask } from 'wagmi/connectors';
 
 export const wagmiConfig = createConfig({

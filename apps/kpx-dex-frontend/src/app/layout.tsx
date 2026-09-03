@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Providers }    from '../components/Providers';
+import '@axioledger/axio-design-system/styles';
+import { Providers } from '../components/Providers';
 
 export const metadata = {
   title:       'KPX DEX — Axioledger',
@@ -9,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif' }}>
+      <body style={{ margin: 0 }}>
         <Providers>{children}</Providers>
       </body>
     </html>
