@@ -5,11 +5,11 @@
 // Uses a real EOA deployer (not Anvil deterministic keys).
 //
 // Prerequisites:
-//   1. Fund deployer 0xD0187818eFA84fd4CfaB69e8374d4E468C6B7B4b with >= 0.05 SepoliaETH
+//   1. Fund deployer 0xAf3D0febB24706912706660FB41D48Fc89548A53 with >= 0.05 SepoliaETH
 //      -> faucet: https://sepoliafaucet.com / https://faucet.quicknode.com/ethereum/sepolia
 //   2. Export environment variables (never hardcode):
 //        export SEPOLIA_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/<ALCHEMY_KEY>"
-//        export SEPOLIA_DEPLOYER_PK="<private key for 0xD018...B4b>"
+//        export SEPOLIA_DEPLOYER_PK="<private key for 0xAf3D0feb...53>"
 //        export ETHERSCAN_API_KEY="<key for verification>"
 //   3. Vault/guardian addresses below -- review before broadcasting.
 //
@@ -37,7 +37,7 @@ import "../src/AXQGovernance.sol";
 
 // ── Sepolia Vault & Guardian Configuration ────────────────────────────────────
 //
-// On Sepolia these are the deployer (0xD018...B4b) acting as all vaults for
+// On Sepolia these are the deployer (0xAf3D0feb...53) acting as all vaults for
 // initial testing. Replace with real multisig/cold wallet addresses before
 // mainnet migration.
 //
@@ -55,26 +55,28 @@ import "../src/AXQGovernance.sol";
 library SepoliaConfig {
 
     // ── Deployer ─────────────────────────────────────────────────────────────
-    // Generate a fresh keypair OFFLINE: cast wallet new
+    // Keypair từ passkey.txt [AXQ_DEPLOYER] — generated offline 03/09/2026
     // Set SEPOLIA_DEPLOYER_PK in GitHub Secrets (never commit the private key).
     // Address below must match vm.addr(SEPOLIA_DEPLOYER_PK) or deploy will revert.
-    address internal constant DEPLOYER = 0xC9661928F00991A19Fe1c92648582aB88417750e;
+    address internal constant DEPLOYER = 0xAf3D0febB24706912706660FB41D48Fc89548A53;
 
-    // ── Vault addresses (testnet: all → deployer for simplicity) ─────────────
+    // ── Vault addresses (testnet: dedicated wallets từ passkey.txt) ───────────
+    // Mỗi vault có ví riêng — chuẩn bị cho mainnet migration
     // TODO-MAINNET: replace each with its real multisig before mainnet deploy
-    address internal constant VPX_SUBSIDY_VAULT = DEPLOYER;
-    address internal constant RD_TREASURY_VAULT = DEPLOYER;  // sweep target
-    address internal constant RWA_RESERVE_VAULT = DEPLOYER;
-    address internal constant STRATEGIC_VAULT   = DEPLOYER;
-    address internal constant TGE_VAULT         = DEPLOYER;
+    address internal constant VPX_SUBSIDY_VAULT = DEPLOYER;                            // deployer (testnet)
+    address internal constant RD_TREASURY_VAULT = 0x9B7AF512e3E5d2C27FFf9d53814883DAeca08AE4; // [ANS_TREASURY] (testnet treasury)
+    address internal constant RWA_RESERVE_VAULT = DEPLOYER;                            // deployer (testnet)
+    address internal constant STRATEGIC_VAULT   = DEPLOYER;                            // deployer (testnet)
+    address internal constant TGE_VAULT         = DEPLOYER;                            // deployer (testnet)
 
-    // ── Guardian Council (testnet: all → deployer) ────────────────────────────
-    // TODO-MAINNET: 5 distinct cold-wallet addresses, each from a separate entity
-    address internal constant GUARDIAN_0 = DEPLOYER;
-    address internal constant GUARDIAN_1 = DEPLOYER;
-    address internal constant GUARDIAN_2 = DEPLOYER;
-    address internal constant GUARDIAN_3 = DEPLOYER;
-    address internal constant GUARDIAN_4 = DEPLOYER;
+    // ── Guardian Council — 3 ghế dùng ví riêng, 2 ghế deployer tạm ──────────
+    // passkey.txt: [GUARDIAN_0], [GUARDIAN_1], [GUARDIAN_2]
+    // TODO-MAINNET: 5 ghế độc lập với hardware wallet riêng biệt
+    address internal constant GUARDIAN_0 = 0xAB8F9a9F3E3aFd97043E6b63D344d73535d1ce9F;
+    address internal constant GUARDIAN_1 = 0x921ffd8ff806A281a760923Eb48997E4362c5cc3;
+    address internal constant GUARDIAN_2 = 0xEd179Bbccd28D270b23811e2fBb042Db76c5A96B;
+    address internal constant GUARDIAN_3 = DEPLOYER; // TODO: thêm ví thứ 4
+    address internal constant GUARDIAN_4 = DEPLOYER; // TODO: thêm ví thứ 5
 
     // ── Output paths ──────────────────────────────────────────────────────────
     string internal constant ADDR_JSON   = "script/addresses-sepolia.json";
@@ -154,8 +156,16 @@ contract DeployAxqSepolia is Script {
 
         vm.stopBroadcast();
 
-        _writeAddressJson(deployer, address(token), address(vault), address(governance));
-        _writeEnvFile(address(token), address(vault), address(governance));
+        // Emit machine-parseable markers for CI stdout parsing (fs sandbox safe)
+        console.log("DEPLOY_OUTPUT_TOKEN=%s",      address(token));
+        console.log("DEPLOY_OUTPUT_VESTING=%s",    address(vault));
+        console.log("DEPLOY_OUTPUT_GOVERNANCE=%s", address(governance));
+
+        // Best-effort file write (works locally; may be skipped in CI sandbox)
+        try this._writeAddressJson(deployer, address(token), address(vault), address(governance)) {}
+        catch { console.log("WARN: vm.writeFile skipped (CI sandbox)"); }
+        try this._writeEnvFile(address(token), address(vault), address(governance)) {}
+        catch { console.log("WARN: vm.writeEnvFile skipped (CI sandbox)"); }
 
         console.log("");
         console.log("=== DEPLOY COMPLETE - NEXT STEPS ===");
@@ -171,7 +181,7 @@ contract DeployAxqSepolia is Script {
         address token,
         address vault,
         address governance
-    ) internal {
+    ) public {
         string memory nl = "\n";
         // Build JSON in two halves to stay within stack limit
         string memory part1 = string.concat(
@@ -200,7 +210,7 @@ contract DeployAxqSepolia is Script {
         address token,
         address vault,
         address governance
-    ) internal {
+    ) public {
         string memory nl = "\n";
         string memory envContent = string.concat(
             "# AXIOLEDGER Sepolia Testnet - auto-generated by DeployAxqSepolia", nl,

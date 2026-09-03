@@ -146,18 +146,27 @@ jobs:
         id: parse
         working-directory: smart-contracts/axioledger-system
         run: |
-          if [[ -f "script/addresses-sepolia.json" ]]; then
+          # Primary: parse stdout markers emitted by forge script (CI sandbox safe)
+          TOKEN=$(grep "DEPLOY_OUTPUT_TOKEN="      deploy-output.txt | tail -1 | sed 's/.*DEPLOY_OUTPUT_TOKEN=//')
+          VEST=$(grep  "DEPLOY_OUTPUT_VESTING="    deploy-output.txt | tail -1 | sed 's/.*DEPLOY_OUTPUT_VESTING=//')
+          GOV=$(grep   "DEPLOY_OUTPUT_GOVERNANCE=" deploy-output.txt | tail -1 | sed 's/.*DEPLOY_OUTPUT_GOVERNANCE=//')
+
+          # Fallback: try JSON file (works on local runs)
+          if [[ -z "$TOKEN" && -f "script/addresses-sepolia.json" ]]; then
             TOKEN=$(jq -r '.contracts.axqToken'      script/addresses-sepolia.json)
             GOV=$(jq   -r '.contracts.axqGovernance' script/addresses-sepolia.json)
             VEST=$(jq  -r '.contracts.axqVesting'    script/addresses-sepolia.json)
+          fi
+
+          if [[ -n "$TOKEN" && "$TOKEN" != "null" ]]; then
             echo "axq_token=$TOKEN"      >> "$GITHUB_OUTPUT"
             echo "axq_governance=$GOV"   >> "$GITHUB_OUTPUT"
             echo "axq_vesting=$VEST"     >> "$GITHUB_OUTPUT"
-            echo "AXQToken:     $TOKEN"
+            echo "AXQToken:      $TOKEN"
             echo "AXQGovernance: $GOV"
             echo "AXQVesting:    $VEST"
           else
-            echo "::warning::addresses-sepolia.json not found (dry-run?)"
+            echo "::warning::No deployed addresses found — dry-run or broadcast failed"
           fi
 
       - name: Upload addresses artifact
