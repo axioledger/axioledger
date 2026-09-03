@@ -10,7 +10,7 @@
 #   SEPOLIA_DEPLOYER_PK     — Private key for DEPLOYER address in SepoliaConfig
 #   ETHERSCAN_API_KEY       — For contract verification on Etherscan
 #
-# Required: Deployer 0xD0187818eFA84fd4CfaB69e8374d4E468C6B7B4b funded with >= 0.05 SepoliaETH
+# Required: Deployer 0xAf3D0febB24706912706660FB41D48Fc89548A53 funded with >= 0.05 SepoliaETH ✅
 # Faucets:  https://sepoliafaucet.com  |  https://faucet.quicknode.com/ethereum/sepolia
 #
 # Jobs:
@@ -47,7 +47,7 @@ concurrency:
 env:
   FOUNDRY_VERSION: stable
   CHAIN_ID: 11155111
-  DEPLOYER_ADDRESS: "0xC9661928F00991A19Fe1c92648582aB88417750e"
+  DEPLOYER_ADDRESS: "0xAf3D0febB24706912706660FB41D48Fc89548A53"
 
 jobs:
   # ── Gate: confirm keyword required for manual dispatch ───────────────────────
@@ -94,7 +94,7 @@ jobs:
           MIN_BALANCE=20000000000000000  # 0.02 ETH
           if (( BALANCE < MIN_BALANCE )); then
             echo "::error::Deployer balance $BALANCE wei < 0.02 ETH minimum."
-            echo "::error::Fund 0xC9661928F00991A19Fe1c92648582aB88417750e at https://sepoliafaucet.com"
+            echo "::error::Fund 0xAf3D0febB24706912706660FB41D48Fc89548A53 at https://sepoliafaucet.com"
             exit 1
           fi
           echo "Balance OK: $(python3 -c "print($BALANCE/1e18)") ETH"
