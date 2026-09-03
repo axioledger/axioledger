@@ -252,9 +252,24 @@ contract DeployAxqSepoliaGenesis is Script {
 
         require(deployer == SepoliaConfig.DEPLOYER, "SepoliaGenesis: wrong deployer key");
 
-        string memory jsonData = vm.readFile(SepoliaConfig.ADDR_JSON);
-        address tokenAddr = abi.decode(vm.parseJson(jsonData, ".contracts.axqToken"), (address));
-        address govAddr   = abi.decode(vm.parseJson(jsonData, ".contracts.axqGovernance"), (address));
+        // Read addresses from env vars (set by CI from deploy-axq outputs)
+        // Fallback to JSON file for local runs
+        address tokenAddr;
+        address govAddr;
+        try vm.envAddress("AXQ_TOKEN") returns (address t) {
+            tokenAddr = t;
+        } catch {
+            string memory jsonData = vm.readFile(SepoliaConfig.ADDR_JSON);
+            tokenAddr = abi.decode(vm.parseJson(jsonData, ".contracts.axqToken"), (address));
+        }
+        try vm.envAddress("AXQ_GOVERNANCE") returns (address g) {
+            govAddr = g;
+        } catch {
+            string memory jsonData = vm.readFile(SepoliaConfig.ADDR_JSON);
+            govAddr = abi.decode(vm.parseJson(jsonData, ".contracts.axqGovernance"), (address));
+        }
+        require(tokenAddr != address(0), "SepoliaGenesis: AXQ_TOKEN not set");
+        require(govAddr   != address(0), "SepoliaGenesis: AXQ_GOVERNANCE not set");
 
         console.log("=== AXIOLEDGER SEPOLIA GENESIS ===");
         console.log("AXQToken:   ", tokenAddr);

@@ -193,17 +193,13 @@ jobs:
         with:
           version: ${{ env.FOUNDRY_VERSION }}
 
-      - name: Download addresses artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: sepolia-addresses
-          path: smart-contracts/axioledger-system/script/
-
       - name: Forge script — DeployAxqSepoliaGenesis
         working-directory: smart-contracts/axioledger-system
         env:
           SEPOLIA_DEPLOYER_PK: ${{ secrets.SEPOLIA_DEPLOYER_PK }}
           SEPOLIA_RPC_URL:     ${{ secrets.SEPOLIA_RPC_URL }}
+          AXQ_TOKEN:      ${{ needs.deploy-axq.outputs.axq_token }}
+          AXQ_GOVERNANCE: ${{ needs.deploy-axq.outputs.axq_governance }}
         run: |
           forge script script/DeployAxqSepolia.s.sol:DeployAxqSepoliaGenesis \
             --rpc-url "$SEPOLIA_RPC_URL" \
