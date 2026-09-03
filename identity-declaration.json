@@ -33,9 +33,9 @@
       "not_after": "2031-08-30T08:09:08Z",
       "loc_allocation": 50000,
       "license": "BSL-1.1",
-      "sepolia_deployer": "0xD0187818eFA84fd4CfaB69e8374d4E468C6B7B4b",
+      "sepolia_deployer": "0xC9661928F00991A19Fe1c92648582aB88417750e",
       "deploy_script": "smart-contracts/axioledger-system/script/DeployAxqSepolia.s.sol",
-      "sepolia_status": "funded -- 0.05 SepoliaETH received (tx: 0x18c102f655f09675dc15a99796b94fe3408c1b2e32509017bff30747c0047d12) -- awaiting GitHub Secrets to trigger workflow"
+      "sepolia_status": "new_deployer_rotated -- awaiting SepoliaETH faucet + GitHub Secrets (prev deployer 0xD018...B4b key lost)"
     },
     {
       "pillar": "Valiprecision",
