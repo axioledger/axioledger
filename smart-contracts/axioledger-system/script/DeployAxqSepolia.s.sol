@@ -156,10 +156,15 @@ contract DeployAxqSepolia is Script {
 
         vm.stopBroadcast();
 
-        // Emit machine-parseable markers for CI stdout parsing (fs sandbox safe)
-        console.log("DEPLOY_OUTPUT_TOKEN=%s",      address(token));
-        console.log("DEPLOY_OUTPUT_VESTING=%s",    address(vault));
-        console.log("DEPLOY_OUTPUT_GOVERNANCE=%s", address(governance));
+        // Emit machine-parseable markers — printed to stdout for CI parsing
+        // These are printed AFTER stopBroadcast so they appear in normal output,
+        // not only in -vvv trace. Format: key=value on its own line.
+        string memory outToken = string.concat("DEPLOY_OUTPUT_TOKEN=", vm.toString(address(token)));
+        string memory outVault = string.concat("DEPLOY_OUTPUT_VESTING=", vm.toString(address(vault)));
+        string memory outGov   = string.concat("DEPLOY_OUTPUT_GOVERNANCE=", vm.toString(address(governance)));
+        console.log(outToken);
+        console.log(outVault);
+        console.log(outGov);
 
         // Best-effort file write (works locally; may be skipped in CI sandbox)
         try this._writeAddressJson(deployer, address(token), address(vault), address(governance)) {}
