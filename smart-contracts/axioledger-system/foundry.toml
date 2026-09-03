@@ -11,3 +11,10 @@ remappings   = [
   "@openzeppelin/=lib/openzeppelin-contracts/",
   "forge-std/=lib/forge-std/src/"
 ]
+
+# Allow Deploy.s.sol to write addresses.json and .env.localnet / .env.sepolia
+fs_permissions = [
+  { access = "read-write", path = "script/" },
+  { access = "write",      path = ".env.localnet" },
+  { access = "write",      path = ".env.sepolia" }
+]

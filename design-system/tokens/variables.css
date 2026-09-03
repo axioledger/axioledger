@@ -194,3 +194,124 @@
 .bg-primary   { background-color: var(--color-background-primary); }
 .bg-secondary { background-color: var(--color-background-secondary); }
 .bg-surface   { background-color: var(--color-surface-default); }
+
+/* ── Namespace Security Guard — TLP Tokens ──────────────────── */
+/* Bound to ANS namespace resolution.                           */
+/* Usage: set data-tlp="safe|caution|blocked|system" on parent */
+
+:root {
+  /* SAFE (.axq, .vrq) */
+  --tlp-safe:           #00D68F;
+  --tlp-safe-subtle:    rgba(0, 214, 143, 0.12);
+  --tlp-safe-border:    #00B37A;
+  --tlp-safe-text:      #003D2A;
+
+  /* CAUTION (.kpx) */
+  --tlp-caution:        #FFAA00;
+  --tlp-caution-subtle: rgba(255, 170, 0, 0.12);
+  --tlp-caution-border: #CC8800;
+  --tlp-caution-text:   #3D2D00;
+
+  /* BLOCKED (unknown.* / raw hex) */
+  --tlp-blocked:        #FF3D71;
+  --tlp-blocked-subtle: rgba(255, 61, 113, 0.12);
+  --tlp-blocked-border: #CC0040;
+  --tlp-blocked-text:   #3D0012;
+  --tlp-blocked-overlay:rgba(255, 61, 113, 0.08);
+
+  /* SYSTEM (.sqx, .vpx) — internal, not shown to end users */
+  --tlp-system:         #57606A;
+  --tlp-system-subtle:  rgba(87, 96, 106, 0.10);
+}
+
+/* TLP data-attribute utility classes */
+[data-tlp="safe"]    { --tlp-color: var(--tlp-safe);    --tlp-bg: var(--tlp-safe-subtle);    --tlp-bd: var(--tlp-safe-border);    --tlp-fg: var(--tlp-safe-text);    }
+[data-tlp="caution"] { --tlp-color: var(--tlp-caution); --tlp-bg: var(--tlp-caution-subtle); --tlp-bd: var(--tlp-caution-border); --tlp-fg: var(--tlp-caution-text); }
+[data-tlp="blocked"] { --tlp-color: var(--tlp-blocked); --tlp-bg: var(--tlp-blocked-subtle); --tlp-bd: var(--tlp-blocked-border); --tlp-fg: var(--tlp-blocked-text); }
+[data-tlp="system"]  { --tlp-color: var(--tlp-system);  --tlp-bg: var(--tlp-system-subtle);  --tlp-bd: var(--tlp-system);         --tlp-fg: var(--color-text-secondary); }
+
+/* TLP namespace badge */
+.tlp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--tlp-bg);
+  border: 1px solid var(--tlp-bd);
+  color: var(--tlp-fg);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-base);
+  letter-spacing: var(--letter-spacing-caption);
+}
+.tlp-badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--tlp-color);
+  flex-shrink: 0;
+}
+
+/* TLP security alert panel */
+.tlp-alert {
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--tlp-bd);
+  background-color: var(--tlp-bg);
+  padding: 14px 16px;
+}
+.tlp-alert[data-tlp="blocked"] {
+  animation: tlp-pulse-blocked 2s ease-in-out infinite;
+}
+@keyframes tlp-pulse-blocked {
+  0%, 100% { box-shadow: 0 0 0 0 var(--tlp-blocked-overlay); }
+  50%       { box-shadow: 0 0 0 6px transparent; }
+}
+
+/* ── Passkey / WebAuthn button ───────────────────────────────── */
+.btn-passkey {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: var(--btn-height-giant);
+  padding: 0 28px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-crypto-card);
+  color: var(--color-text-on-accent);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-btn-giant);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 100ms ease;
+  width: 100%;
+}
+.btn-passkey:hover  { opacity: 0.92; }
+.btn-passkey:active { transform: scale(0.98); }
+.btn-passkey:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Biometric icon inside PasskeyButton */
+.btn-passkey__icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* ── Skeleton shimmer ────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #E5E7EB 25%, #F5F6FA 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #30363D 25%, #484F58 50%, #30363D 75%);
+  background-size: 200% 100%;
+}
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

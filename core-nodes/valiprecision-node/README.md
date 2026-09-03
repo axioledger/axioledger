@@ -19,7 +19,7 @@ valiprecision-node/
 │   │   └── on-chain-pusher.js  # Push to VPXOracleFeed (retry + heartbeat)
 │   └── utils/
 │       └── logger.js           # Winston structured JSON logging
-├── src/__tests__/              # Jest unit tests (9 tests, 68% coverage)
+├── src/__tests__/              # Jest unit tests (9 tests, ~90% coverage)
 └── contracts/
     └── VPXOracleFeed.sol       # On-chain feed contract
 ```

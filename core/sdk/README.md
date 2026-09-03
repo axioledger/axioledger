@@ -1,8 +1,13 @@
 # AXIOLEDGER SDK — Monorepo
 
-> **Phiên bản:** v0.0.0 — Genesis Pact Edition  
-> **NPM Registry:** `registry.npmjs.org` (sau khi publish)  
-> **Node.js yêu cầu:** ≥ 20.0.0  
+> **Phiên bản:** v0.1.0 — Initial Pre-Release
+> **NPM Registry:** `registry.npmjs.org` (sau khi publish)
+> **Node.js yêu cầu:** ≥ 20.0.0
+
+> **⚠️ Package Manager:** `core/sdk` sử dụng **npm workspaces** nội bộ, tách biệt hoàn toàn
+> khỏi pnpm workspace gốc của monorepo. Để quản lý packages tại đây, luôn dùng `npm`
+> bên trong thư mục `core/sdk/`, không dùng `pnpm` từ root.
+> Versioning: `cd core/sdk && npx changeset add && npx changeset version`
 
 ---
 

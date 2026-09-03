@@ -1,8 +1,8 @@
-# SWIFT → AXIOLEDGER KPX Gateway — Integration Spec v0.0.0
+# SWIFT → AXIOLEDGER KPX Gateway — Integration Spec v0.2.0
 
-> **Phạm vi:** Tích hợp SWIFT gpi + ISO-20022 (pacs.008 / MT103) vào KINETOPROTOCOL ($KPX)  
-> **Trigger:** Giai đoạn 3 — v1.1.0 (H2 2028) — sau khi RWA Treasury deploy  
-> **Trạng thái:** SDK installed, architecture spec done. Implementation pending.
+> **Phạm vi:** Tích hợp SWIFT gpi + ISO-20022 (pacs.008 / MT103) vào KINETOPROTOCOL ($KPX)
+> **Trigger:** Giai đoạn 3 — v1.1.0 (H2 2028) — sau khi RWA Treasury deploy
+> **Trạng thái:** v0.2.0 — Config & Auth scaffold complete. Hard tests pending Phase A gate.
 
 ---
 
@@ -93,16 +93,17 @@ axioledger:
 ```java
 // Package: com.axioledger.banking.translator
 // File: SwiftMessageTranslator.java
-// Phase: v0.0.0 skeleton — implementation in v1.1.0
+// Phase: v0.2.0 — Auth scaffold done. Full implementation in v1.1.0.
 
 @Service
 @Slf4j
 public class SwiftMessageTranslator {
 
-    private final SwiftSDKClient swiftClient;         // swift-sdk-openapi.jar
-    private final SwiftSecuritySDK securitySDK;       // swift-security-sdk.jar
-    private final KPXRouterClient kpxRouter;          // KPXRouterGateway.sol wrapper
-    private final VRQComplianceClient vrqClient;      // VERACIPHERS VRQ API
+    private final SwiftAuthService authService;        // OAuth2 + mTLS — v0.2.0 ✅
+    private final DaoCollateralProvider collateral;    // Dynamic DAO ratio — v0.2.0 ✅
+    private final SwiftSDKClient swiftClient;          // swift-sdk-openapi.jar
+    private final KPXRouterClient kpxRouter;           // KPXRouterGateway.sol wrapper
+    private final VRQComplianceClient vrqClient;       // VERACIPHERS VRQ API
 
     /**
      * Process incoming pacs.008 (FI Credit Transfer Initiation)
@@ -114,7 +115,7 @@ public class SwiftMessageTranslator {
         log.info("[SWIFT] pacs.008 received: uetr={}", uetr);
 
         // 1. Validate SWIFT message signature
-        securitySDK.verifyMessageSignature(event.getRawMessage());
+        swiftClient.verifyMessageSignature(event.getRawMessage());
 
         // 2. Extract settlement details
         String senderBIC  = event.getDebtorAgent().getBic();
@@ -130,14 +131,17 @@ public class SwiftMessageTranslator {
         }
 
         // 4. Mint RWA Token on KPX
-        String assetId = "SWIFT_" + uetr;
-        BigInteger axqCollateral = calculateAXQCollateral(amount, 15); // 15%
+        // Cố vấn Chỉ thị: collateral ratio read live from Treasury DAO — never hardcoded
+        String assetId      = "SWIFT_" + uetr;
+        int collateralPct   = collateral.getCollateralPct();   // DAO → YAML → 15% fallback
+        BigInteger axqCollateral = calculateAXQCollateral(amount, collateralPct);
         TransactionReceipt receipt = kpxRouter.depositRWA(
             assetId, amount, axqCollateral,
             zkProof.getBytes(), zkProof.getPubInputs()
         );
 
-        log.info("[KPX] RWA minted: assetId={} txHash={}", assetId, receipt.getTxHash());
+        log.info("[KPX] RWA minted: assetId={} txHash={} collateralPct={}%",
+                 assetId, receipt.getTxHash(), collateralPct);
 
         // 5. Send ISO-20022 confirmation back
         sendSwiftAck(uetr, receipt.getTxHash());
@@ -161,16 +165,40 @@ public class SwiftMessageTranslator {
 
 ## Lộ Trình Tích Hợp
 
-| Giai đoạn | Version | Milestone |
-|---|---|---|
-| **Install** | v0.0.0 ✅ | SDK extracted tại `/mnt/q/core/banking/` |
-| **Config** | v0.1.0 | Đăng ký SWIFT Developer Portal, lấy BIC8, setup sandbox |
-| **Auth** | v0.2.0 | OAuth2 + mTLS handshake với SWIFT Sandbox thành công |
-| **Parse** | v0.3.0 | Parse pacs.008/MT103 → Java POJO thành công |
-| **Bridge** | v1.0.0 | VRQ compliance check + KPX depositRWA() trên Testnet |
-| **Live** | v1.1.0 | Mainnet — H2 2028 (Gate G3: TVL ≥ $10B) |
+| Giai đoạn | Version | Milestone | Trạng thái |
+|---|---|---|---|
+| **Install** | v0.0.0 | SDK extracted tại `/mnt/q/core/banking/` | ✅ Done |
+| **Config** | v0.1.0 | Spring Boot module scaffold, `SwiftBankingConfig`, `application.yml`, dynamic collateral DAO | ✅ Scaffold done |
+| **Auth** | v0.2.0 | `SwiftAuthService` OAuth2 + mTLS, token caching, soft tests (14 cases) | ✅ Scaffold done — hard test pending Phase A gate |
+| **Parse** | v0.3.0 | Parse pacs.008/MT103 → Java POJO thành công | ⏳ Pending |
+| **Bridge** | v1.0.0 | VRQ compliance check + KPX depositRWA() trên Testnet | ⏳ Pending |
+| **Live** | v1.1.0 | Mainnet — H2 2028 (Gate G3: TVL ≥ $10B) | 🔒 Locked |
+
+### v0.2.0 Hard Test Gate (unblock khi Phase A hoàn thành)
+
+```
+[ ] export SWIFT_CLIENT_ID=<từ Developer Portal>
+[ ] export SWIFT_CLIENT_SECRET=<từ Developer Portal>
+[ ] export SWIFT_MGW_API_KEY=<từ MGW config>
+[ ] Đặt client.p12 + swift-sandbox-ca.jks vào /mnt/q/core/banking/swift-gateway/keys/ (chmod 600)
+[ ] mvn test -Dtest="**/hard/**Test" --file pom.xml → POST /oauth2/v1/token → HTTP 200
+[ ] Xác nhận: access_token present, expires_in ≥ 840 (14 min)
+```
 
 ---
 
-*AXIOLEDGER SWIFT Integration Spec v0.0.0 — Genesis Pact Edition*  
+---
+
+### Cố vấn Chỉ thị — Đã Triển khai
+
+| Chỉ thị | Class | Trạng thái |
+|---|---|---|
+| Dynamic collateral ratio (DAO, không hardcode 15%) | [`DaoCollateralProvider`](src/main/java/com/axioledger/banking/config/DaoCollateralProvider.java) | ✅ Implemented |
+| Co-location với MGW trên dedicated server (/mnt/q/) | `application.yml` path config | ✅ Enforced |
+| Secrets qua env vars, không commit plaintext | `${SWIFT_CLIENT_ID}` etc. | ✅ Enforced |
+| Production profile locked (env = live, Gate G3) | `application.yml` profile production | ✅ Locked |
+
+---
+
+*AXIOLEDGER SWIFT Integration Spec v0.2.0 — Config & Auth Edition*
 *Ref: Whitepaper §11.10 · KPXRouterGateway.sol · idead/Global.md §IV*

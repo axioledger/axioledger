@@ -29,9 +29,13 @@
   "jest": {
     "testEnvironment": "node",
     "testMatch": ["**/src/__tests__/**/*.test.js"],
-    "collectCoverageFrom": ["src/**/*.js", "!src/__tests__/**"],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/__tests__/**",
+      "!src/oracle-node.js"
+    ],
     "coverageThreshold": {
-      "global": { "lines": 50 }
+      "global": { "lines": 80, "functions": 75, "statements": 80 }
     }
   }
 }

@@ -117,7 +117,7 @@ pnpm --filter axioledger-system forge test
 - [ ] DAO Contracts: Quadratic Voting, Time-Lock (7d), Escape Hatch
 - [ ] Guardian Council (5 seats, 4/5 veto)
 
-### Phase 4 — Building Infrastructure 🔄
+### Phase 4 — Building Infrastructure ✅
 - [x] Design System published → `@veraciphers/axio-design-system@4.0.0`
 - [x] `VRQPasskeyValidator` deployed → Sepolia
 - [x] `KPXRouterGateway` CI pipeline → green on `feat/kpx-amm-router-scaffold`
@@ -125,11 +125,14 @@ pnpm --filter axioledger-system forge test
 - [ ] Internal PKI: Root CA + 5 Intermediate CAs for ANS domains
 - [ ] RBAC/IAM: SysAdmin / Node Operator / Treasury Engine roles
 
-### Phase 5 — Harvesting & Integration ⏳
+### Phase 5 — Harvesting & Integration 🔄
+- [x] `@axioledger/axq-sdk` v0.2.0 — real viem calls to AXQToken + ANSRegistry
+- [x] `@axioledger/evm-interop` v0.2.0 — full ABI catalogue + wagmi hook factories
+- [x] `axq-governance-ui` — wired to AXQGovernance: propose / castVote / queue / execute
+- [x] `axiopass-wallet` — VRQPasskeyValidator install flow, passkey registration, P256 key extraction
 - [ ] AMM liquidity pools + Emission Controller
 - [ ] Cross-chain bridge (KPX ↔ SQX)
 - [ ] RWA Treasury activation
-- [ ] Axiopass wallet + ZK-DID full integration
 - [ ] Namespace Security Guard (anti-squatting)
 
 ### Phase 6 — Testing & SecOps ⏳
@@ -181,13 +184,13 @@ Security vulnerabilities: see [`SECURITY.md`](./SECURITY.md)
 | `core-nodes/valiprecision-node` | ✅ v1 implemented | ✅ Green | ⏳ Pending |
 | `core-nodes/sequentichain-node` | ❄️ Frozen (Phase 3) | — | — |
 | `packages/axio-design-system` | ✅ v4.0.0 published | ✅ Green | N/A |
-| `packages/axq-sdk` | 🔄 Scaffolded | — | — |
-| `packages/ans-resolver` | 🔄 Scaffolded | — | — |
+| `packages/axq-sdk` | ✅ v0.2.0 — viem on-chain client | ✅ Green | N/A |
+| `packages/ans-resolver` | ✅ v1 — 15 tests, 85.7% coverage | ✅ Green | N/A |
 | `packages/zkp-crypto-lib` | 🔄 Scaffolded | — | — |
-| `packages/evm-interop` | 🔄 Scaffolded | — | — |
+| `packages/evm-interop` | ✅ v0.2.0 — ABIs + wagmi hooks | — | N/A |
 | `apps/kpx-dex-frontend` | ✅ Scaffold | 🔄 Running | — |
-| `apps/axiopass-wallet` | 🔄 Scaffolded | — | — |
-| `apps/axq-governance-ui` | 🔄 Scaffolded | — | — |
+| `apps/axiopass-wallet` | ✅ v1 — VRQPasskeyValidator wired | — | — |
+| `apps/axq-governance-ui` | ✅ v1 — AXQGovernance wired | — | — |
 
 ---
 

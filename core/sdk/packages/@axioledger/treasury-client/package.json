@@ -1,6 +1,6 @@
 {
   "name": "@axioledger/treasury-client",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Treasury DAO on-chain client — proposals, voting, emission",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,13 +11,20 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": ["axioledger", "blockchain", "web3"],
+  "keywords": [
+    "axioledger",
+    "blockchain",
+    "web3"
+  ],
   "license": "BSL-1.1",
   "repository": {
     "type": "git",

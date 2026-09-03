@@ -8,10 +8,13 @@
 #   - Manual (workflow_dispatch) — for hotfix/manual publishes
 #   - Push of a version tag: sdk-v* (e.g. sdk-v0.1.0, sdk-v0.2.0)
 #
-# Required Secrets:
-#   NODE_AUTH_TOKEN   — PAT with packages:write scope
-#                       Settings → Developer settings → Personal access tokens
-#                       Scopes: write:packages, read:packages, delete:packages
+# Auth strategy (in priority order):
+#   1. NODE_AUTH_TOKEN secret — PAT with write:packages scope (optional)
+#      Settings → Developer settings → Personal access tokens (classic)
+#      Scopes: write:packages, read:packages
+#   2. GITHUB_TOKEN (built-in) — automatically available in every workflow run,
+#      has packages:write scope for the repository owner's packages.
+#      No manual setup required — used as fallback when NODE_AUTH_TOKEN is absent.
 #
 # Workflow:
 #   1. Install deps (npm ci inside core/sdk/)
@@ -42,6 +45,13 @@ on:
   push:
     tags:
       - 'sdk-v*'
+
+# Grant built-in GITHUB_TOKEN the packages:write permission so it can publish
+# to GitHub Packages without a separate PAT (NODE_AUTH_TOKEN is still preferred
+# when set — it is scoped to multiple orgs; GITHUB_TOKEN only covers this repo's org).
+permissions:
+  contents: read
+  packages: write
 
 concurrency:
   group: publish-sdk-${{ github.ref }}
@@ -122,7 +132,9 @@ jobs:
       - name: Publish packages for ${{ matrix.scope }}
         working-directory: core/sdk
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          # Prefer explicit PAT (NODE_AUTH_TOKEN) for cross-org publish;
+          # fall back to built-in GITHUB_TOKEN which has packages:write for this repo.
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           SCOPE="${{ matrix.scope }}"
           DRY_RUN_FLAG=""
@@ -131,10 +143,13 @@ jobs:
             echo "DRY RUN MODE — no packages will be published"
           fi
 
+          # Resolve effective token (NODE_AUTH_TOKEN already set via env above)
+          EFFECTIVE_TOKEN="${NODE_AUTH_TOKEN}"
+
           # Configure npm for GitHub Packages
           cat > .npmrc << EOF
           ${SCOPE}:registry=https://npm.pkg.github.com
-          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+          //npm.pkg.github.com/:_authToken=${EFFECTIVE_TOKEN}
           EOF
 
           find "packages/${SCOPE}" -name "package.json" -maxdepth 2 | while read pkgjson; do

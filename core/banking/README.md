@@ -1,6 +1,6 @@
 # AXIOLEDGER Banking Integration — SWIFT Gateway
 
-> **Phân vùng bảo mật:** `/mnt/q/core/banking/` (Q:\ isolated — Least Privilege)  
+> **Phân vùng bảo mật:** `core/banking/` (Q:\ isolated — Least Privilege)  
 > **Mục đích:** Cổng tích hợp TradFi → AXIOLEDGER KPX (ISO-20022 / SWIFT → RWA Token)  
 > **Trạng thái:** v0.0.0 — SDK Installed, Integration Pending (v1.1.0 KPX milestone)
 
@@ -9,7 +9,7 @@
 ## Cấu trúc Thư mục
 
 ```
-/mnt/q/core/banking/
+core/banking/
 ├── swift-gateway/
 │   ├── mgw/          ← SWIFT Microgateway 2.0.17-1 (414 files)
 │   │   ├── bin/      ← start.sh / stop.sh / service.sh / cbs.sh
@@ -35,7 +35,7 @@
 ## Permissions (Least Privilege)
 
 ```
-/mnt/q/core/banking/     700  root:root  ← chỉ root vào được
+core/banking/     700  root:root  ← chỉ root vào được
 ├── swift-gateway/        750  root:root
 │   ├── keys/             700  root:root  ← KHÔNG ai ngoài root
 │   ├── config/           700  root:root  ← credentials bảo mật

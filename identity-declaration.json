@@ -33,18 +33,20 @@
       "not_after": "2031-08-30T08:09:08Z",
       "loc_allocation": 50000,
       "license": "BSL-1.1",
-      "sepolia_deployer": "0x77DF94665C671218beE29c7f4BD62aB083cb59B3",
+      "sepolia_deployer": "0xAf3D0febB24706912706660FB41D48Fc89548A53",
       "deploy_script": "smart-contracts/axioledger-system/script/DeployAxqSepolia.s.sol",
       "sepolia_status": "deployed",
       "sepolia_contracts": {
-        "axqToken": "0x72eED93F91e30Bc3d15CbA6FF1E23Ba5f59f2f50",
-        "axqGovernance": "0xd5aae0234F376f418f8dC80fe5a8Dc6029C360b4",
-        "axqVesting": "0x29E5E815211De8f5f842751CD4de83e00034bD0a",
-        "network": "sepolia",
-        "chainId": 11155111,
-        "deployedAt": "2026-09-03",
-        "genesis": "genesisAllocate() called \u2014 500B AXQ minted",
-        "ansRegistry": "0xC939c62cfFB905aa9fF00B90908286c31f46B18c"
+        "axqToken":      "0xE5b7C16c2724B9C5d7625b74FA8AD884A27Af432",
+        "axqGovernance": "0xACA9fEB74DFF1260f51827C114444511C3d27847",
+        "axqVesting":    "0x6d47Fb42D43ad381eC65bC005eB21532a704BB7e",
+        "rdTreasury":    "0x9B7AF512e3E5d2C27FFf9d53814883DAeca08AE4",
+        "kpxRouter":     "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "ansRegistry":   "",
+        "network":       "sepolia",
+        "chainId":       11155111,
+        "deployedAt":    "2026-09-03",
+        "genesis":       "genesisAllocate() called — 500B AXQ minted"
       }
     },
     {
