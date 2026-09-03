@@ -33,9 +33,19 @@
       "not_after": "2031-08-30T08:09:08Z",
       "loc_allocation": 50000,
       "license": "BSL-1.1",
-      "sepolia_deployer": "0xC9661928F00991A19Fe1c92648582aB88417750e",
+      "sepolia_deployer": "0x77DF94665C671218beE29c7f4BD62aB083cb59B3",
       "deploy_script": "smart-contracts/axioledger-system/script/DeployAxqSepolia.s.sol",
-      "sepolia_status": "new_deployer_rotated -- awaiting SepoliaETH faucet + GitHub Secrets (prev deployer 0xD018...B4b key lost)"
+      "sepolia_status": "deployed",
+      "sepolia_contracts": {
+        "axqToken": "0x72eED93F91e30Bc3d15CbA6FF1E23Ba5f59f2f50",
+        "axqGovernance": "0xd5aae0234F376f418f8dC80fe5a8Dc6029C360b4",
+        "axqVesting": "0x29E5E815211De8f5f842751CD4de83e00034bD0a",
+        "network": "sepolia",
+        "chainId": 11155111,
+        "deployedAt": "2026-09-03",
+        "genesis": "genesisAllocate() called \u2014 500B AXQ minted",
+        "ansRegistry": "0xC939c62cfFB905aa9fF00B90908286c31f46B18c"
+      }
     },
     {
       "pillar": "Valiprecision",
@@ -73,7 +83,7 @@
       "not_after": "2031-08-30T08:09:11Z",
       "loc_allocation": 150000,
       "license": "BSL-1.1",
-      "status": "FROZEN — Phase 3"
+      "status": "FROZEN \u2014 Phase 3"
     },
     {
       "pillar": "Kinetoprotocol",
@@ -168,7 +178,7 @@
   "_proof": {
     "sha256_payload": "ed67a1f2833f3c6c73237f0aefa6812faf1976efcf3249ecc37868599f268870",
     "algorithm": "RSA-SHA256 signed with Axioledger Root CA private key (RSA-4096)",
-    "signed_by": "Axioledger Root CA — /C=VN/ST=Hanoi/L=Hanoi/O=Axioledger Foundation/OU=Core Settlement Hub/CN=Axioledger Root CA",
+    "signed_by": "Axioledger Root CA \u2014 /C=VN/ST=Hanoi/L=Hanoi/O=Axioledger Foundation/OU=Core Settlement Hub/CN=Axioledger Root CA",
     "cert_serial": "4E9AF158A110D804F7BD69E32E0FAF1EB4DBDB6A",
     "cert_fingerprint_sha256": "01:5D:37:79:B6:33:AC:2B:19:CF:49:22:42:22:AD:B9:A8:74:1E:CA:04:57:3D:4F:A6:F1:B1:E0:FF:95:9A:F9",
     "signature_base64": "YvfuAKPKrTdrEy9mBew0xoPWSfDOQO5cNZ5FOqvEoV2DrjgyhjWr8kymWXgqEsF+2yYhp/Lrs/KF7/knavj4tmmC14zFFkI8Zcttohwbvx1B8EC1j3a5/DM7Wpfc81bz5ldQYmegiH44BuYwQyDHSGETNL0qqk0T50Z2lAOPCsn8SRMm5Glk29h00ZDkSCH/wLT0RswOkkG/p0ItXVNLAkaw1/o4GX3eTBfpVF7v6bRe//1rD/5vg1XiL31QCh0FOCbWj69jYXbA1WMzyJ9nsuPfeYhghdjiPZmyQjkNlPb12EA3CsUcMEUTNs27dRMXWywuLXOC0flRWtB9LXDlLmH+tcNszh9sql6R/7fhfUdE5wwqG+dxul1QxNVUh/G9usnlLJPx7R5tED/TzGZNbpXnnrPHQ2b9+Pd6fm+npnCQ45m646Gzxp/KIBt5iu+gU4Vzg9kGb9GBwZ5mGj8e8Feb+Mg/l6RKIVL/s6Rfxe+JH9kR++of0ZxMT6disWbfgmxXA2MugD+dqMvk8/To+Nzj+KV+js9p4KExZvCwES2wIZtk1jw1YUnY+bx/luUF2MczlmsFOSurwLzz62gZNnBTRlKjqqCC0n/A3vMguokF13VqQ2Dw2EUbMuP9ztVSaNgdV+Z860j9LQeZzThwUlTZ2wxDbMggDsiJXRWzrww=",
